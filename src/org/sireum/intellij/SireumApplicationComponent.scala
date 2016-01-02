@@ -39,6 +39,7 @@ object SireumApplicationComponent {
   private var _sireumHome: Option[File] = None
 
   final def sireumHome(project: Project): Option[File] = {
+    if (_sireumHome.nonEmpty) return _sireumHome
     val pc = PropertiesComponent.getInstance
     checkSireumDir(pc.getValue("org.sireum"))
     if (_sireumHome.nonEmpty) return _sireumHome

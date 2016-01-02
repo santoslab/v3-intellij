@@ -29,7 +29,11 @@
 
     <actions>
         <!-- Add your actions here -->
-        <action id="foo" class="org.sireum.intellij.logika.action.LogikaCheckAction" text="Check Logika Proof"
+        <group id="SireumActionGroup" text="Sireum" popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </group>
+        <action id="LogikaCheckAction" class="org.sireum.intellij.logika.action.LogikaCheckAction"
+                text="Check Logika Proof"
                 description="Check Logika Proof">
             <add-to-group group-id="RunnerActions" anchor="last"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl L"/>

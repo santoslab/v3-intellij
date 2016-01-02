@@ -55,15 +55,14 @@ private class LogikaCheckAction
       asInstanceOf[DefaultActionGroup]
     editorPopupGroup.addAction(this, Constraints.LAST)
 
-    val runGroup = am.getAction(IdeActions.GROUP_RUN).
+    val runGroup = am.getAction("SireumActionGroup").
       asInstanceOf[DefaultActionGroup]
-    runGroup.addSeparator()
     runGroup.addAction(this, Constraints.LAST)
   }
 
   override def update(e: AnActionEvent): Unit = {
     val project = e.getProject
-    e.getPresentation.setEnabled(project != null &&
+    e.getPresentation.setVisible(project != null &&
       fileExts.contains(getFileExt(project)))
   }
 

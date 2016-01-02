@@ -1,17 +1,18 @@
 <idea-plugin version="2">
     <id>org.sireum.intellij</id>
-    <name>Sireum IntelliJ Plugin</name>
+    <name>Sireum</name>
     <version>1.0</version>
     <vendor email="robby@santoslab.org" url="http://santoslab.org">SAnToS Lab</vendor>
 
     <description><![CDATA[
-      Enter short description for your plugin here.<br>
-      <em>most HTML tags may be used</em>
+        <a href="http://sireum.org">Sireum</a> is a software analysis platform being
+        developed at SAnToS Laboratory, Kansas State University.
+        This plugin integrates Sireum tools such as the Logika natural deduction proof
+        checker for propositional, predicate, and programming logic into IntelliJ 15.
     ]]></description>
 
     <change-notes><![CDATA[
-      Add change notes here.<br>
-      <em>most HTML tags may be used</em>
+
     ]]>
     </change-notes>
 

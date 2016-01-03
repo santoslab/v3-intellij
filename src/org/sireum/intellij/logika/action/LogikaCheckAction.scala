@@ -45,6 +45,7 @@ import com.intellij.openapi.wm.{StatusBar, StatusBarWidget, WindowManager}
 import com.intellij.ui.JBColor
 import com.intellij.util.Consumer
 import org.sireum.intellij.SireumApplicationComponent
+import org.sireum.intellij.logika.LogikaConfigurable
 import org.sireum.logika.message._
 import org.sireum.util._
 import LogikaAction._
@@ -64,7 +65,6 @@ object LogikaCheckAction {
   val verifiedInfoIcon = IconLoader.getIcon("/logika/icon/logika-verified-info.png")
   val queue = new LinkedBlockingQueue[String]()
   val editorMap = mmapEmpty[String, (Project, Editor)]
-  val idle = 2000
   val dataKey = new Key[ISeq[RangeHighlighter]]("Logika")
   var request: Option[Request] = None
   var processInit = false
@@ -99,9 +99,10 @@ object LogikaCheckAction {
       processInit =
         SireumApplicationComponent.getSireumProcess(p,
           queue, { s =>
-            Message.unpickleOutput[OutputMessage](s) match {
-              case r: Result => processResult(r)
-            }
+            if (s.trim != "")
+              Message.unpickleOutput[OutputMessage](s) match {
+                case r: Result => processResult(r)
+              }
           }, "logika", "--ide")
 
       val statusBar = WindowManager.getInstance().getStatusBar(p)
@@ -145,7 +146,7 @@ object LogikaCheckAction {
             this.synchronized {
               request match {
                 case Some(r: Request) =>
-                  if (System.currentTimeMillis - r.time > idle) {
+                  if (System.currentTimeMillis - r.time > LogikaConfigurable.idle) {
                     request = None
                     editorMap.synchronized {
                       editorMap(r.requestId) = (r.project, r.editor)
@@ -181,7 +182,9 @@ object LogikaCheckAction {
     def f(): String = {
       Message.pickleInput(Check(requestId, isSilent,
         isProgramming, proofs, lastOnly = false,
-        autoEnabled = false, timeout = 2000, checkSat = false))
+        autoEnabled = LogikaConfigurable.autoEnabled,
+        timeout = LogikaConfigurable.timeout,
+        checkSat = LogikaConfigurable.checkSat))
     }
     if (isSilent) {
       this.synchronized {

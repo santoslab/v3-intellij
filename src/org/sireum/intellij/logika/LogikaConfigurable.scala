@@ -25,22 +25,134 @@
 
 package org.sireum.intellij.logika
 
+import java.awt.Color
 import javax.swing.JComponent
+import javax.swing.event.{DocumentEvent, DocumentListener}
 
+import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.options.Configurable
+import com.intellij.ui.JBColor
+import org.sireum.util._
+
+object LogikaConfigurable {
+  private val idleKey = "org.sireum.logika.idle"
+  private val timeoutKey = "org.sireum.logika.timeout"
+  private val autoEnabledKey = "org.sireum.logika.auto"
+  private val checkSatKey = "org.sireum.logika.checkSat"
+  private[logika] var idle: Natural = 2000
+  private[logika] var timeout: Natural = 2000
+  private[logika] var autoEnabled = false
+  private[logika] var checkSat = false
+
+  def loadConfiguration(): Unit = {
+    val pc = PropertiesComponent.getInstance
+    idle = pc.getInt(idleKey, idle)
+    timeout = pc.getInt(timeoutKey, timeout)
+    autoEnabled = pc.getBoolean(autoEnabledKey, autoEnabled)
+    checkSat = pc.getBoolean(checkSatKey, checkSat)
+  }
+
+  def saveConfiguration(): Unit = {
+    val pc = PropertiesComponent.getInstance
+    pc.setValue(idleKey, idle.toString)
+    pc.setValue(timeoutKey, timeout.toString)
+    pc.setValue(autoEnabledKey, autoEnabled.toString)
+    pc.setValue(checkSatKey, checkSat.toString)
+  }
+
+  def parseGe200(text: String): Option[Natural] =
+    try {
+      val n = text.toInt
+      if (n < 200) None else Some(n)
+    } catch {
+      case _: Throwable => None
+    }
+}
+
+import LogikaConfigurable._
 
 final class LogikaConfigurable extends LogikaForm with Configurable {
+
+  private var idleValue = idle
+  private var timeoutValue = timeout
+  private var autoEnabledValue = autoEnabled
+  private var checkSatValue = checkSat
+  private var validIdle = true
+  private var validTimeout = true
+  private var fgColor: Color = _
+
   override def getDisplayName: String = "Logika"
 
   override def getHelpTopic: String = null
 
-  override def isModified: Boolean = false
+  override def isModified: Boolean =
+    validIdle && validTimeout &&
+      (idleTextField.getText != idleValue.toString ||
+        timeoutTextField.getText != timeoutValue.toString ||
+        autoCheckBox.isSelected != autoEnabledValue ||
+        checkSatCheckBox.isSelected != checkSatValue)
 
-  override def createComponent(): JComponent = logikaPanel
+  override def createComponent(): JComponent = {
+    def updateIdle() = {
+      val text = idleTextField.getText
+      validIdle = parseGe200(text).nonEmpty
+      idleLabel.setForeground(if (validIdle) fgColor else JBColor.red)
+      idleTextField.setToolTipText(if (validIdle) "OK" else "Must be at least 200.")
+    }
+    def updateTimeout() = {
+      val text = timeoutTextField.getText
+      validTimeout = parseGe200(text).nonEmpty
+      timeoutLabel.setForeground(if (validTimeout) fgColor else JBColor.red)
+      timeoutTextField.setToolTipText(if (validTimeout) "OK" else "Must be at least 200.")
+    }
+
+    load()
+
+    reset()
+
+    fgColor = idleLabel.getForeground
+
+    idleTextField.getDocument.addDocumentListener(new DocumentListener {
+      override def insertUpdate(e: DocumentEvent): Unit = updateIdle()
+
+      override def changedUpdate(e: DocumentEvent): Unit = updateIdle()
+
+      override def removeUpdate(e: DocumentEvent): Unit = updateIdle()
+    })
+
+    timeoutTextField.getDocument.addDocumentListener(new DocumentListener {
+      override def insertUpdate(e: DocumentEvent): Unit = updateTimeout()
+
+      override def changedUpdate(e: DocumentEvent): Unit = updateTimeout()
+
+      override def removeUpdate(e: DocumentEvent): Unit = updateTimeout()
+    })
+
+    logikaPanel
+  }
 
   override def disposeUIResources(): Unit = {}
 
-  override def apply(): Unit = {}
+  override def apply(): Unit = {
+    idle = parseGe200(idleTextField.getText).getOrElse(idle)
+    timeoutValue = parseGe200(timeoutTextField.getText).getOrElse(timeoutValue)
+    autoEnabledValue = autoCheckBox.isSelected
+    checkSatValue = checkSatCheckBox.isSelected
+    saveConfiguration()
+    load()
+  }
 
-  override def reset(): Unit = {}
+  def load(): Unit = {
+    idleValue = idle
+    timeoutValue = timeout
+    autoEnabledValue = autoEnabled
+    checkSatValue = checkSat
+  }
+
+  override def reset(): Unit = {
+    idleTextField.setText(idleValue.toString)
+    timeoutTextField.setText(timeoutValue.toString)
+    autoCheckBox.setSelected(autoEnabledValue)
+    checkSatCheckBox.setSelected(checkSatValue)
+  }
 }

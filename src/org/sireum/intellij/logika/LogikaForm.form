@@ -23,6 +23,7 @@
         </constraints>
         <properties>
           <text value="&amp;Auto"/>
+          <toolTipText value="Auto mode for programming logic"/>
         </properties>
       </component>
       <hspacer id="3fc34">
@@ -57,7 +58,7 @@
         <properties>
           <labelFor value="c9266"/>
           <text value="&amp;Idle (ms)"/>
-          <toolTipText value="Idle time before analysis is triggered in the background"/>
+          <toolTipText value="Idle time (&gt;= 200) before analysis is triggered in the background"/>
         </properties>
       </component>
       <component id="c9266" class="javax.swing.JTextField" binding="idleTextField">
@@ -75,7 +76,7 @@
         <properties>
           <labelFor value="8d7c"/>
           <text value="&amp;Timeout (ms)"/>
-          <toolTipText value="Timeout for algebra and auto"/>
+          <toolTipText value="Timeout (&gt;= 200) for algebra and auto"/>
         </properties>
       </component>
       <component id="8d7c" class="javax.swing.JTextField" binding="timeoutTextField">

@@ -25,22 +25,115 @@
 
 package org.sireum.intellij
 
+import java.awt.Color
+import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing.JComponent
+import javax.swing.event.{DocumentEvent, DocumentListener}
 
 import com.intellij.openapi.options.Configurable
+import com.intellij.ui.JBColor
+
+import org.sireum.util._
 
 final class SireumConfigurable extends SireumForm with Configurable {
+
+  import SireumApplicationComponent._
+
+  private var sireumHomeValue: String = _
+  private var vmArgsValue: String = _
+  private var envVarsValue: String = _
+  private var validSireumHome = false
+  private var validEnvVars = false
+  private var fgColor: Color = _
+
   override def getDisplayName: String = "Sireum"
 
   override def getHelpTopic: String = null
 
-  override def isModified: Boolean = false
+  override def isModified: Boolean = {
+    validSireumHome && validEnvVars &&
+      (sireumHomeValue != sireumHomeTextField.getText ||
+        vmArgsValue != vmArgsTextField.getText ||
+        envVarsValue != envVarsTextArea.getText)
+  }
 
-  override def createComponent(): JComponent = sireumPanel
+  override def createComponent(): JComponent = {
+    def updateSireumHome(path: String): Unit = {
+      validSireumHome = checkSireumDir(path).nonEmpty
+      sireumHomeLabel.setForeground(if (validSireumHome) fgColor else JBColor.red)
+      sireumHomeTextField.setToolTipText(if (validSireumHome) "OK" else sireumInvalid(path))
+    }
+    def updateEnvVars(text: String): Unit = {
+      validEnvVars = text == "" || parseEnvVars(text).nonEmpty
+      envVarsLabel.setForeground(if (validEnvVars) fgColor else JBColor.red)
+      envVarsLabel.setToolTipText(if (validSireumHome) "OK" else "Ill-formed (format: key of [a-zA-Z_][a-zA-Z0-9_]* = value, per line).")
+    }
 
-  override def disposeUIResources(): Unit = {}
+    load()
 
-  override def apply(): Unit = {}
+    reset()
 
-  override def reset(): Unit = {}
+    fgColor = sireumHomeLabel.getForeground
+
+    sireumHomeTextField.getDocument.addDocumentListener(new DocumentListener {
+      override def insertUpdate(e: DocumentEvent): Unit = update()
+
+      override def changedUpdate(e: DocumentEvent): Unit = update()
+
+      override def removeUpdate(e: DocumentEvent): Unit = update()
+
+      def update(): Unit = updateSireumHome(sireumHomeTextField.getText)
+    })
+
+    sireumHomeButton.addActionListener(new ActionListener() {
+      override def actionPerformed(e: ActionEvent): Unit =
+        browseSireumHome(null) match {
+          case Some(p) =>
+            updateSireumHome(p)
+            if (validSireumHome) sireumHomeTextField.setText(p)
+            else updateSireumHome(sireumHomeTextField.getText)
+          case _ =>
+        }
+    })
+
+    updateSireumHome(sireumHomeValue)
+
+    envVarsTextArea.getDocument.addDocumentListener(new DocumentListener {
+      override def insertUpdate(e: DocumentEvent): Unit = update()
+
+      override def changedUpdate(e: DocumentEvent): Unit = update()
+
+      override def removeUpdate(e: DocumentEvent): Unit = update()
+
+      def update(): Unit = updateEnvVars(envVarsTextArea.getText.trim)
+    })
+
+    updateEnvVars(envVarsValue)
+
+    sireumPanel
+  }
+
+  def load(): Unit = {
+    sireumHomeValue = sireumHome.map(_.getAbsolutePath).getOrElse("")
+    vmArgsValue = vmArgsString
+    envVarsValue = envVarsString
+  }
+
+  override def disposeUIResources(): Unit = {
+    fgColor = null
+  }
+
+  override def apply(): Unit = {
+    sireumHome = checkSireumDir(sireumHomeTextField.getText)
+    envVars = parseEnvVars(envVarsTextArea.getText).getOrElse(ilinkedMapEmpty)
+    vmArgs = parseVmArgs(vmArgsTextField.getText)
+    saveConfiguration()
+    load()
+  }
+
+  override def reset(): Unit = {
+    sireumHomeTextField.setText(sireumHomeValue)
+    vmArgsTextField.setText(vmArgsValue)
+    envVarsTextArea.setText(envVarsValue)
+  }
 }

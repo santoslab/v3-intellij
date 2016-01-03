@@ -36,5 +36,5 @@ public abstract class SireumForm {
     protected JTextField vmArgsTextField;
     protected JLabel envVarsLabel;
     protected JTextArea envVarsTextArea;
-    private JScrollPane envVarsScrollPane;
+    protected JScrollPane envVarsScrollPane;
 }

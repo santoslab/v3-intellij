@@ -14,7 +14,7 @@
         </constraints>
         <properties>
           <labelFor value="b3935"/>
-          <text value="&amp;Sireum v3"/>
+          <text value="&amp;Sireum v3 Directory"/>
           <toolTipText value="Sireum v3 Installation Directory"/>
         </properties>
       </component>
@@ -47,7 +47,7 @@
         </constraints>
         <properties>
           <labelFor value="1ab18"/>
-          <text value="&amp;VM Args"/>
+          <text value="&amp;VM Arguments"/>
           <toolTipText value="VM Arguments"/>
         </properties>
       </component>
@@ -68,8 +68,8 @@
         </constraints>
         <properties>
           <labelFor value="fec01"/>
-          <text value="&amp;Env Vars"/>
-          <toolTipText value="Environment Variables (format: key = value, per line)"/>
+          <text value="&amp;Environment Variables"/>
+          <toolTipText value="Environment Variables (format: key of [a-zA-Z_][a-zA-Z0-9_]* = value, per line)"/>
         </properties>
       </component>
       <hspacer id="e6bdb">

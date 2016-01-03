@@ -25,53 +25,75 @@
 
 package org.sireum.intellij
 
+import java.io._
 import java.util.concurrent.BlockingQueue
 
 import com.intellij.ide.util.PropertiesComponent
-import com.intellij.notification.{Notifications, NotificationsManager, Notification}
 import com.intellij.openapi.components._
-import java.io._
 import com.intellij.openapi.fileChooser._
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.Consumer
+import org.sireum.util._
 import org.sireum.util.jvm.Exec
 
 object SireumApplicationComponent {
-  private var _sireumHome: Option[File] = None
+  private val sireumHomeKey = "org.sireum"
+  private val sireumVarArgsKey = "org.sireum.vmargs"
+  private val sireumEnvVarsKey = "org.sireum.envvars"
+  private[intellij] var sireumHome: Option[File] = None
+  private[intellij] var vmArgs: ISeq[String] = ivectorEmpty
+  private[intellij] var envVars = ilinkedMapEmpty[String, String]
+
   private var terminated: Boolean = false
 
-  final def sireumHome(project: Project): Option[File] = {
-    if (_sireumHome.nonEmpty) return _sireumHome
-    val pc = PropertiesComponent.getInstance
-    checkSireumDir(pc.getValue("org.sireum"))
-    if (_sireumHome.nonEmpty) return _sireumHome
-    val env = System.getenv("SIREUM_HOME")
-    if (checkSireumDir(env).isEmpty) {
-      var pathOpt: Option[String] = None
-      val desc = FileChooserDescriptorFactory.createSingleFolderDescriptor()
-      desc.setTitle("Select Sireum v3 directory")
-      FileChooser.chooseFile(
-        desc,
-        project, null, new Consumer[VirtualFile] {
-          override def consume(t: VirtualFile): Unit = {
-            pathOpt = Some(t.getCanonicalPath)
-          }
-        })
-      pathOpt.foreach(path =>
-        if (checkSireumDir(path).isEmpty)
-          Messages.showMessageDialog(project, "Sireum Not Found",
-            s"""$path does not seem to contain a working Sireum installation.
-               |Make sure to run Sireum at least once from the command-line.
-                       """.stripMargin, null)
-      )
-    }
-    _sireumHome
+  final def getSireumHome(project: Project = null): Option[File] = {
+    val r =
+      if (sireumHome.nonEmpty) sireumHome
+      else {
+        val env = System.getenv("SIREUM_HOME")
+        sireumHome = checkSireumDir(env)
+        if (sireumHome.isEmpty) {
+          browseSireumHome(project).foreach(p =>
+            sireumHome = checkSireumDir(p))
+        }
+        sireumHome
+      }
+    saveConfiguration()
+    r
   }
 
+  def envVarsString: String = envVars.map(p => s"${p._1}=${p._2}").
+    mkString(scala.util.Properties.lineSeparator)
+
+  def vmArgsString: String = vmArgs.mkString(" ")
+
+  def browseSireumHome(project: Project = null): Option[String] = {
+    var pathOpt: Option[String] = None
+    val desc = FileChooserDescriptorFactory.createSingleFolderDescriptor()
+    desc.setTitle("Select Sireum v3 directory")
+    FileChooser.chooseFile(
+      desc,
+      project, null, new Consumer[VirtualFile] {
+        override def consume(t: VirtualFile): Unit = {
+          pathOpt = Some(t.getCanonicalPath)
+        }
+      })
+    pathOpt.foreach(path =>
+      if (checkSireumDir(path).isEmpty)
+        Messages.showMessageDialog(project, sireumInvalid(path),
+          "Invalid Sireum Directory", null)
+    )
+    pathOpt
+  }
+
+  def sireumInvalid(path: String): String =
+    s"""$path does not seem to contain a working Sireum installation.
+       |Make sure to run Sireum at least once from the command-line.""".stripMargin
+
   def runSireum(project: Project, input: Option[String], args: String*): Option[String] =
-    sireumHome(project) match {
+    getSireumHome(project) match {
       case Some(d) => runSireum(d.getAbsolutePath, input, args)
       case _ => None
     }
@@ -80,7 +102,7 @@ object SireumApplicationComponent {
                        queue: BlockingQueue[String],
                        processOutput: String => Unit,
                        args: String*): Boolean =
-    sireumHome(project) match {
+    getSireumHome(project) match {
       case Some(d) =>
         val path = d.getAbsolutePath
         new Exec().process(Seq(s"$path/platform/java/bin/java", "-jar",
@@ -111,28 +133,58 @@ object SireumApplicationComponent {
     }
 
   private def runSireum(path: String, input: Option[String], args: Seq[String]): Option[String] = {
-    new Exec().run(0,
-      Seq(s"$path/platform/java/bin/java", "-jar",
+    if (path.trim == "") None
+    else new Exec().run(0,
+      (s"$path/platform/java/bin/java" +: vmArgs) ++ Seq("-jar",
         s"$path/jvm/target/scala-2.11/sireum.jar") ++ args,
-      input, ("SIREUM_HOME", path)) match {
+      input, envVars.toSeq :+("SIREUM_HOME", path): _*) match {
       case Exec.StringResult(s, _) => Some(s)
       case _ => None
     }
   }
 
-  private final def checkSireumDir(path: String): Option[File] = {
+  private[intellij] final def checkSireumDir(path: String): Option[File] = {
     if (path == null) return None
     runSireum(path, None, Seq()) match {
       case Some(s) =>
         if (s.lines.exists(
           _.trim == "Sireum: A Software Analysis Platform (v3)")) {
           val pc = PropertiesComponent.getInstance
-          pc.setValue("org.sireum", path)
-          _sireumHome = Some(new File(path))
-          _sireumHome
+          Some(new File(path))
         } else None
       case _ => None
     }
+  }
+
+  def parseEnvVars(text: String): Option[ILinkedMap[String, String]] = {
+    var r = ilinkedMapEmpty[String, String]
+    for (l <- text.split('\n')) {
+      val kv = l.split('=')
+      if (kv.length != 2) return None
+      val Array(k, v) = kv
+      if (k.charAt(0).isDigit) return None
+      if (!k.forall(c => c == '_' || c.isLetterOrDigit)) return None
+      r += k -> v
+    }
+    Some(r)
+  }
+
+  def parseVmArgs(text: String): ISeq[String] =
+    if (text.trim == "") ivectorEmpty
+    else text.split(' ').toVector
+
+  def loadConfiguration(): Unit = {
+    val pc = PropertiesComponent.getInstance
+    sireumHome = Option(pc.getValue(sireumHomeKey)).flatMap(checkSireumDir)
+    envVars = Option(pc.getValue(sireumEnvVarsKey)).flatMap(parseEnvVars).getOrElse(ilinkedMapEmpty)
+    vmArgs = Option(pc.getValue(sireumVarArgsKey)).map(parseVmArgs).getOrElse(ivectorEmpty)
+  }
+
+  def saveConfiguration(): Unit = {
+    val pc = PropertiesComponent.getInstance
+    pc.setValue(sireumHomeKey, sireumHome.map(_.getAbsolutePath).orNull)
+    pc.setValue(sireumEnvVarsKey, envVarsString)
+    pc.setValue(sireumVarArgsKey, vmArgs.mkString(" "))
   }
 }
 
@@ -141,6 +193,7 @@ class SireumApplicationComponent extends ApplicationComponent {
   override val getComponentName: String = "Sireum Application"
 
   override def initComponent(): Unit = {
+    SireumApplicationComponent.loadConfiguration()
   }
 
   override def disposeComponent(): Unit = {

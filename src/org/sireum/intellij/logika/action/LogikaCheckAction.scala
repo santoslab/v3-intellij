@@ -21,13 +21,14 @@
  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
  */
 
 package org.sireum.intellij.logika.action
 
+import java.awt.event.MouseEvent
 import java.awt.{Color, Font}
 import java.util.concurrent._
+import javax.swing.Icon
 
 import com.intellij.openapi.editor.event._
 
@@ -39,23 +40,38 @@ import com.intellij.openapi.editor.markup._
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util._
+import com.intellij.openapi.wm.StatusBarWidget.{IconPresentation, WidgetPresentation, PlatformType}
+import com.intellij.openapi.wm.{StatusBar, StatusBarWidget, WindowManager}
 import com.intellij.ui.JBColor
+import com.intellij.util.Consumer
 import org.sireum.intellij.SireumApplicationComponent
 import org.sireum.logika.message._
 import org.sireum.util._
+import LogikaAction._
 
 object LogikaCheckAction {
-  val icon = IconLoader.getIcon("/logika.png")
-  val gutterErrorIcon = IconLoader.getIcon("/logika-error.png")
-  val gutterWarningIcon = IconLoader.getIcon("/logika-warning.png")
-  val gutterInfoIcon = IconLoader.getIcon("/logika-info.png")
-  val fileExts = Set(".sc", ".scala", ".logika", ".lgk")
+  val icons = {
+    var r = (0 to 6).map(n => IconLoader.getIcon(s"/logika/icon/logika-$n.png"))
+    r = r.dropRight(1)
+    r ++= r.reverse
+    r = r.dropRight(1)
+    r
+  }
+  val icon = icons(0)
+  val gutterErrorIcon = IconLoader.getIcon("/logika/icon/logika-error.png")
+  val gutterWarningIcon = IconLoader.getIcon("/logika/icon/logika-warning.png")
+  val gutterInfoIcon = IconLoader.getIcon("/logika/icon/logika-info.png")
   val queue = new LinkedBlockingQueue[String]()
   val editorMap = mmapEmpty[String, (Project, Editor)]
   val idle = 2000
-  var request: Option[(Long, String)] = None
+  val dataKey = new Key[ISeq[RangeHighlighter]]("Logika")
+  var request: Option[Request] = None
   var processInit = false
   var terminated = false
+
+  final case class Request(time: Long, requestId: String,
+                           project: Project, editor: Editor,
+                           msgGen: () => String)
 
   sealed trait LogikaTextAttributes
 
@@ -86,44 +102,65 @@ object LogikaCheckAction {
               case r: Result => processResult(r)
             }
           }, "logika", "--ide")
+
+      val statusBar = WindowManager.getInstance().getStatusBar(p)
+      var frame = 0
+      val statusIdle = "Sireum Logika is idle"
+      val statusWorking = "Sireum Logika is working"
+      var statusTooltip = statusIdle
+      val statusBarWidget = new StatusBarWidget {
+        override def ID(): String = "Sireum Logika"
+
+        override def install(statusBar: StatusBar): Unit = {}
+
+        override def getPresentation(`type`: PlatformType): WidgetPresentation =
+          new IconPresentation {
+            override def getClickConsumer: Consumer[MouseEvent] = null
+
+            override def getTooltipText: String = statusTooltip
+
+            override def getIcon: Icon = icons(frame)
+          }
+
+        override def dispose(): Unit = {}
+      }
+      statusBar.addWidget(statusBarWidget)
+      statusBar.updateWidget(statusBarWidget.ID())
       val t = new Thread {
         override def run(): Unit = {
+          val defaultFrame = icons.length / 2 + 1
           while (!terminated) {
+            if (editorMap.nonEmpty) {
+              frame = (frame + 1) % icons.length
+              statusTooltip = statusWorking
+              statusBar.updateWidget(statusBarWidget.ID())
+            } else {
+              val f = frame
+              frame = defaultFrame
+              statusTooltip = statusIdle
+              if (f != defaultFrame)
+                statusBar.updateWidget(statusBarWidget.ID())
+            }
             this.synchronized {
               request match {
-                case Some((time, r)) =>
-                  if (System.currentTimeMillis - time > idle) {
+                case Some(r: Request) =>
+                  if (System.currentTimeMillis - r.time > idle) {
                     request = None
-                    queue.add(r)
+                    editorMap.synchronized {
+                      editorMap(r.requestId) = (r.project, r.editor)
+                    }
+                    queue.add(r.msgGen())
                   }
                 case None =>
               }
             }
-            Thread.sleep(idle / 2)
+            Thread.sleep(175)
           }
+          statusBar.removeWidget(statusBarWidget.ID())
         }
       }
       t.setDaemon(true)
       t.start()
-    }
-  }
-
-  def getFilePath(project: Project): Option[String] = {
-    val fem = FileEditorManager.getInstance(project)
-    fem.getSelectedFiles match {
-      case Array(f, _*) => Some(f.getCanonicalPath)
-      case _ => None
-    }
-  }
-
-  def getFileExt(project: Project): String = {
-    getFilePath(project) match {
-      case Some(path) =>
-        val i = path.lastIndexOf('.')
-        if (i >= 0)
-          path.substring(path.lastIndexOf('.'))
-        else ""
-      case _ => ""
     }
   }
 
@@ -134,60 +171,65 @@ object LogikaCheckAction {
         case ".scala" | ".sc" => true
         case _ => false
       }
-    val (t, requestId) =
-      editorMap.synchronized {
-        val t = System.currentTimeMillis
-        val id = t.toString
-        editorMap(id) = (project, editor)
-        request = None
-        (t, id)
-      }
     val proofs = ivector(ProofFile(Some(getFilePath(project).get), input))
-    val r = Message.pickleInput(Check(requestId, isSilent,
-      isProgramming, proofs, lastOnly = false,
-      autoEnabled = false, timeout = 2000, checkSat = false))
-    if (isSilent)
+    val (t, requestId) = {
+      val t = System.currentTimeMillis
+      val id = t.toString
+      (t, id)
+    }
+    def f(): String = {
+      Message.pickleInput(Check(requestId, isSilent,
+        isProgramming, proofs, lastOnly = false,
+        autoEnabled = false, timeout = 2000, checkSat = false))
+    }
+    if (isSilent) {
       this.synchronized {
-        request = Some((t, r))
+        request = Some(Request(t, requestId, project, editor, f))
       }
-    else queue.add(r)
+    } else {
+      editorMap.synchronized {
+        this.synchronized {
+          request match {
+            case Some(r: Request) =>
+              editorMap -= r.requestId
+            case _ =>
+          }
+          request = None
+        }
+        editorMap(requestId) = (project, editor)
+      }
+      queue.add(f())
+    }
   }
 
   def editorOpened(project: Project, editor: Editor): Unit = {
     if (!fileExts.contains(getFileExt(project))) return
     init(project)
     editor.getDocument.addDocumentListener(new DocumentListener {
-      override def documentChanged(event: DocumentEvent): Unit = {
+      override def documentChanged(event: DocumentEvent): Unit =
         analyze(project, editor, isSilent = true)
-      }
 
-      override def beforeDocumentChange(event: DocumentEvent): Unit = {
-      }
+      override def beforeDocumentChange(event: DocumentEvent): Unit = {}
     })
     editor.addEditorMouseMotionListener(new EditorMouseMotionListener {
       override def mouseMoved(e: EditorMouseEvent): Unit = {
         if (!EditorMouseEventArea.EDITING_AREA.equals(e.getArea))
           return
+        val rhs = editor.getUserData(dataKey)
+        if (rhs == null) return
         val component = editor.getContentComponent
         val point = e.getMouseEvent.getPoint
         val pos = editor.xyToLogicalPosition(point)
         val offset = editor.logicalPositionToOffset(pos)
-        val rhs = editor.getMarkupModel.getAllHighlighters
-        for (rh <- rhs) {
-          rh match {
-            case rh: RangeHighlighter if rh.getTextAttributes.isInstanceOf[LogikaTextAttributes] =>
-              if (rh.getStartOffset <= offset && offset <= rh.getEndOffset) {
-                component.setToolTipText(rh.getErrorStripeTooltip.toString)
-                return
-              }
-            case _ =>
+        for (rh <- rhs)
+          if (rh.getStartOffset <= offset && offset <= rh.getEndOffset) {
+            component.setToolTipText(rh.getErrorStripeTooltip.toString)
+            return
           }
-        }
         component.setToolTipText(null)
       }
 
-      override def mouseDragged(e: EditorMouseEvent): Unit = {
-      }
+      override def mouseDragged(e: EditorMouseEvent): Unit = {}
     })
   }
 
@@ -229,30 +271,27 @@ object LogikaCheckAction {
     }
   }
 
-  def processResult(r: Result): Unit = {
-    val tags = r.tags
-    val (project, editor) = editorMap.synchronized {
-      editorMap(r.requestId)
-    }
+  def processResult(r: Result): Unit =
     ApplicationManager.getApplication.invokeLater(new Runnable {
-      override def run(): Unit = {
-        val mm = editor.getMarkupModel
-        for (h <- mm.getAllHighlighters) {
-          h.getTextAttributes match {
-            case ErrorTextAttributes | WarningTextAttributes | InfoTextAttributes =>
-              mm.removeHighlighter(h)
-            case _ =>
-          }
+      override def run(): Unit = dataKey.synchronized {
+        val tags = r.tags
+        val (project, editor) = editorMap.synchronized {
+          val pe = editorMap(r.requestId)
+          editorMap -= r.requestId
+          pe
         }
-      }
-    })
-    val (lTags, nlTags) = tags.partition(_.isInstanceOf[UriTag with LocationInfoTag with MessageTag])
-    if (!r.isSilent) notifyHelper(project, nlTags)
-    if (lTags.isEmpty) return
-    ApplicationManager.getApplication.invokeLater(new Runnable {
-      override def run(): Unit = {
+        val mm = editor.getMarkupModel
+        val rhs = editor.getUserData(dataKey)
+        if (rhs != null)
+          for (rh <- rhs)
+            mm.removeHighlighter(rh)
+        editor.putUserData(dataKey, null)
+        val (lTags, nlTags) = tags.partition(_.isInstanceOf[UriTag with LocationInfoTag with MessageTag])
+        if (!r.isSilent) notifyHelper(project, nlTags)
+        if (lTags.isEmpty) return
         if (!editor.isDisposed) {
           val mm = editor.getMarkupModel
+          var rhs = ivectorEmpty[RangeHighlighter]
           for (lTag <- lTags) (lTag: @unchecked) match {
             case tag: UriTag with LocationInfoTag with MessageTag =>
               val start = tag.offset
@@ -274,39 +313,28 @@ object LogikaCheckAction {
 
                 override def hashCode = System.identityHashCode(this)
               })
+              rhs :+= rh
           }
+          editor.putUserData(dataKey, rhs)
         }
       }
     })
-  }
 }
 
 import LogikaCheckAction._
 
-private class LogikaCheckAction
-  extends AnAction("Check Logika Proof",
-    "Check Logika Proof", LogikaCheckAction.icon) {
+private class LogikaCheckAction extends LogikaAction {
 
   // init
   {
+    getTemplatePresentation.setIcon(icon)
 
     val am = ActionManager.getInstance
 
-    val editorPopupGroup = am.getAction(IdeActions.GROUP_EDITOR_POPUP).
+    val runGroup = am.getAction("SireumLogikaGroup").
       asInstanceOf[DefaultActionGroup]
-    editorPopupGroup.addAction(this, Constraints.LAST)
-
-    val runGroup = am.getAction("SireumActionGroup").
-      asInstanceOf[DefaultActionGroup]
-    runGroup.addAction(this, Constraints.LAST)
+    runGroup.addAction(this, Constraints.FIRST)
   }
-
-  override def update(e: AnActionEvent): Unit = {
-    val project = e.getProject
-    e.getPresentation.setVisible(project != null &&
-      fileExts.contains(getFileExt(project)))
-  }
-
 
   override def actionPerformed(e: AnActionEvent): Unit = {
     e.getPresentation.setEnabled(false)

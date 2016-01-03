@@ -21,11 +21,15 @@
  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
  */
 
 package org.sireum.intellij
 
+import java.util.concurrent.BlockingQueue
+
 import com.intellij.ide.util.PropertiesComponent
+import com.intellij.notification.{Notifications, NotificationsManager, Notification}
 import com.intellij.openapi.components._
 import java.io._
 import com.intellij.openapi.fileChooser._
@@ -37,6 +41,7 @@ import org.sireum.util.jvm.Exec
 
 object SireumApplicationComponent {
   private var _sireumHome: Option[File] = None
+  private var terminated: Boolean = false
 
   final def sireumHome(project: Project): Option[File] = {
     if (_sireumHome.nonEmpty) return _sireumHome
@@ -72,6 +77,40 @@ object SireumApplicationComponent {
       case _ => None
     }
 
+  def getSireumProcess(project: Project,
+                       queue: BlockingQueue[String],
+                       processOutput: String => Unit,
+                       args: String*): Boolean =
+    sireumHome(project) match {
+      case Some(d) =>
+        val path = d.getAbsolutePath
+        new Exec().process(Seq(s"$path/platform/java/bin/java", "-jar",
+          s"$path/jvm/target/scala-2.11/sireum.jar") ++ args, { os =>
+          try {
+            val w = new OutputStreamWriter(os)
+            val lineSep = scala.util.Properties.lineSeparator
+            while (!terminated) {
+              val m = queue.take()
+              w.write(m)
+              w.write(lineSep)
+              w.flush()
+            }
+          } finally os.close()
+        }, { is =>
+          try {
+            val r = new BufferedReader(new InputStreamReader(is))
+            while (!terminated) {
+              val line = r.readLine()
+              if (line != null) {
+                processOutput(line)
+              }
+            }
+          } finally is.close()
+        }, ("SIREUM_HOME", path))
+        true
+      case _ => false
+    }
+
   private def runSireum(path: String, input: Option[String], args: Seq[String]): Option[String] = {
     new Exec().run(0,
       Seq(s"$path/platform/java/bin/java", "-jar",
@@ -100,11 +139,12 @@ object SireumApplicationComponent {
 
 class SireumApplicationComponent extends ApplicationComponent {
 
-  override val getComponentName: String = "Sireum"
+  override val getComponentName: String = "Sireum Application"
 
   override def initComponent(): Unit = {
   }
 
   override def disposeComponent(): Unit = {
+    SireumApplicationComponent.terminated = true
   }
 }

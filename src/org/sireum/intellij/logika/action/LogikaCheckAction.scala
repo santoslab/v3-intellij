@@ -58,9 +58,10 @@ object LogikaCheckAction {
     r
   }
   val icon = icons(0)
-  val gutterErrorIcon = IconLoader.getIcon("/logika/icon/logika-error.png")
-  val gutterWarningIcon = IconLoader.getIcon("/logika/icon/logika-warning.png")
-  val gutterInfoIcon = IconLoader.getIcon("/logika/icon/logika-info.png")
+  val gutterErrorIcon = IconLoader.getIcon("/logika/icon/logika-gutter-error.png")
+  val gutterWarningIcon = IconLoader.getIcon("/logika/icon/logika-gutter-warning.png")
+  val gutterInfoIcon = IconLoader.getIcon("/logika/icon/logika-gutter-info.png")
+  val verifiedInfoIcon = IconLoader.getIcon("/logika/icon/logika-verified-info.png")
   val queue = new LinkedBlockingQueue[String]()
   val editorMap = mmapEmpty[String, (Project, Editor)]
   val idle = 2000
@@ -264,10 +265,14 @@ object LogikaCheckAction {
     }
     val inlTags = tags.filter(_.isInstanceOf[InfoTag])
     if (inlTags.nonEmpty) {
+      val msg = inlTags.map(_.asInstanceOf[MessageTag].message).mkString(lineSep)
       notify(new Notification(
         "Sireum Logika", "Logika Information",
-        inlTags.map(_.asInstanceOf[MessageTag].message).mkString(lineSep),
-        NotificationType.INFORMATION, null))
+        msg,
+        NotificationType.INFORMATION, null) {
+        override def getIcon: Icon =
+          if (msg.contains("is accepted")) verifiedInfoIcon else null
+      })
     }
   }
 

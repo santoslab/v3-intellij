@@ -266,12 +266,13 @@ object LogikaCheckAction {
     val inlTags = tags.filter(_.isInstanceOf[InfoTag])
     if (inlTags.nonEmpty) {
       val msg = inlTags.map(_.asInstanceOf[MessageTag].message).mkString(lineSep)
-      notify(new Notification(
-        "Sireum Logika", "Logika Information",
-        msg,
+      val isVerified = msg.contains("is accepted")
+      val (title, icon) =
+        if (isVerified) ("Logika Verified", verifiedInfoIcon)
+        else ("Logika Information", null)
+      notify(new Notification("Sireum Logika", title, msg,
         NotificationType.INFORMATION, null) {
-        override def getIcon: Icon =
-          if (msg.contains("is accepted")) verifiedInfoIcon else null
+        override def getIcon: Icon = icon
       })
     }
   }

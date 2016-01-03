@@ -103,7 +103,7 @@ object LogikaCheckAction {
               Message.unpickleOutput[OutputMessage](s) match {
                 case r: Result => processResult(r)
               }
-          }, "logika", "--ide")
+          }, "logika", "--server")
 
       val statusBar = WindowManager.getInstance().getStatusBar(p)
       var frame = 0

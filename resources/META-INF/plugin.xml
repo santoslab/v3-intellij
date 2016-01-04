@@ -26,7 +26,7 @@
 <idea-plugin version="2">
     <id>org.sireum.intellij</id>
     <name>Sireum</name>
-    <version>1.0</version>
+    <version>3.0</version>
     <vendor email="robby@santoslab.org" url="http://santoslab.org">SAnToS Lab</vendor>
 
     <description><![CDATA[
@@ -64,7 +64,7 @@
         </group>
 
         <action id="LogikaCheckAction" class="org.sireum.intellij.logika.action.LogikaCheckAction"
-                text="Check"
+                text="Logika Check"
                 description="Check Logika Proof">
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl L"/>

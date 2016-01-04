@@ -65,7 +65,8 @@ object LogikaCheckAction {
   val verifiedInfoIcon = IconLoader.getIcon("/logika/icon/logika-verified-info.png")
   val queue = new LinkedBlockingQueue[String]()
   val editorMap = mmapEmpty[String, (Project, Editor)]
-  val dataKey = new Key[ISeq[RangeHighlighter]]("Logika")
+  val logikaKey = new Key[String]("Logika")
+  val dataKey = new Key[ISeq[RangeHighlighter]]("Logika Data")
   var request: Option[Request] = None
   var processInit = false
   var terminated = false
@@ -167,6 +168,8 @@ object LogikaCheckAction {
   }
 
   def analyze(project: Project, editor: Editor, isSilent: Boolean): Unit = {
+    if (!"Enabled".equals(editor.getUserData(logikaKey))) return
+    init(project)
     val input = editor.getDocument.getText
     val isProgramming =
       getFileExt(project) match {
@@ -208,10 +211,10 @@ object LogikaCheckAction {
 
   def editorOpened(project: Project, editor: Editor): Unit = {
     if (!fileExts.contains(getFileExt(project))) return
-    init(project)
     editor.getDocument.addDocumentListener(new DocumentListener {
-      override def documentChanged(event: DocumentEvent): Unit =
+      override def documentChanged(event: DocumentEvent): Unit = {
         analyze(project, editor, isSilent = true)
+      }
 
       override def beforeDocumentChange(event: DocumentEvent): Unit = {}
     })
@@ -351,6 +354,7 @@ private class LogikaCheckAction extends LogikaAction {
     val editor = FileEditorManager.
       getInstance(project).getSelectedTextEditor
     if (editor == null) return
+    editor.putUserData(logikaKey, "Enabled")
     analyze(project, editor, isSilent = false)
     e.getPresentation.setEnabled(true)
   }

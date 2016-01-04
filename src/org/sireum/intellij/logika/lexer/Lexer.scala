@@ -31,9 +31,8 @@ import java.io.StringReader
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.markup.{HighlighterTargetArea, TextAttributes, RangeHighlighter}
 import com.intellij.openapi.util.Key
-import com.intellij.ui.JBColor
 import com.intellij.util.ui.UIUtil
-import org.antlr.v4.runtime.{CommonTokenStream, ANTLRInputStream, Token}
+import org.antlr.v4.runtime.{ANTLRInputStream, Token}
 import org.sireum.util._
 
 object Lexer {
@@ -63,21 +62,23 @@ object Lexer {
     "protected", "return", "sealed", "super", "this", "throw",
     "trait", "try", "type", "val", "var", "while", "with", "yield")
 
-  val propJustDarkColor = new Color(0xb3, 0x89, 0xc5)
-  val predJustDarkColor = new Color(0x98, 0x76, 0xaa)
-  val progJustDarkColor = new Color(0x82, 0x48, 0x92)
+  val propJustDarkColor = new Color(0x82, 0x48, 0x92)
+  val predJustDarkColor = propJustDarkColor
+  val progJustDarkColor = propJustDarkColor
   val propJustColor = progJustDarkColor
   val progJustColor = propJustDarkColor
   val typeDarkColor = new Color(0x49, 0x73, 0x70)
   val typeColor = new Color(0x43, 0xa9, 0xac)
   val constantDarkColor = new Color(0x68, 0x97, 0xbb)
-  val constantColor = new Color(0, 0, 0xff)
+  val constantColor = new Color(0, 0, 0xdd)
   val stringDarkColor = new Color(0x6a, 0x87, 0x59)
   val stringColor = new Color(0, 0x80, 0)
   val logikaDarkColor = new Color(0x60, 0x60, 0x60)
   val logikaColor = new Color(0x90, 0x90, 0x90)
   val keywordDarkColor = new Color(0xcc, 0x78, 0x32)
   val keywordColor = new Color(0, 0, 0x80)
+  val commentDarkColor = new Color(0x7c, 0x7c, 0x7c)
+  val commentColor = new Color(0x8c, 0x8c, 0x8c)
   val plainDarkColor = new Color(0xa9, 0xb7, 0xc6)
   val plainColor = new Color(0x00, 0x00, 0x00)
 
@@ -122,28 +123,28 @@ object Lexer {
   }
 
   object TypeTextAttributes
-    extends TextAttributes(JBColor.green, null, null, null, Font.PLAIN)
+    extends TextAttributes(null, null, null, null, Font.PLAIN)
     with LogikaHighlightingTextAttributes {
     override def getForegroundColor =
       if (isDark) typeDarkColor else typeColor
   }
 
   object ConstantTextAttributes
-    extends TextAttributes(JBColor.blue, null, null, null, Font.PLAIN)
+    extends TextAttributes(null, null, null, null, Font.PLAIN)
     with LogikaHighlightingTextAttributes {
     override def getForegroundColor =
       if (isDark) constantDarkColor else constantColor
   }
 
   object StringTextAttributes
-    extends TextAttributes(JBColor.blue, null, null, null, Font.PLAIN)
+    extends TextAttributes(null, null, null, null, Font.PLAIN)
     with LogikaHighlightingTextAttributes {
     override def getForegroundColor =
       if (isDark) stringDarkColor else stringColor
   }
 
   object LogikaTextAttributes
-    extends TextAttributes(JBColor.blue, null, null, null, Font.PLAIN)
+    extends TextAttributes(null, null, null, null, Font.PLAIN)
     with LogikaHighlightingTextAttributes {
     override def getForegroundColor =
       if (isDark) logikaDarkColor else logikaColor
@@ -167,6 +168,13 @@ object Lexer {
       if (isDark) plainDarkColor else plainColor
   }
 
+  object CommentTextAttributes
+    extends TextAttributes(null, null, null, null, Font.PLAIN)
+    with LogikaHighlightingTextAttributes {
+    override def getForegroundColor =
+      if (isDark) commentDarkColor else commentColor
+  }
+
   def addSyntaxHighlighter(editor: Editor): Unit = {
     val mm = editor.getMarkupModel
     var rhs = ivectorEmpty[RangeHighlighter]
@@ -185,13 +193,14 @@ object Lexer {
     val sr = new StringReader(editor.getDocument.getText)
     val inputStream = new ANTLRInputStream(sr)
     val lexer = new Antlr4LogikaLexer(inputStream)
-    val tokenStream = new CommonTokenStream(lexer)
-    tokenStream.fill()
+
     import Antlr4LogikaLexer._
-    val tokens: ISeq[Token] = {
+
+    val tokens: CSeq[Token] = {
+
       import scala.collection.JavaConversions._
-      tokenStream.getTokens.filter(t =>
-        t.getChannel == 0 || t.getType != NL).toVector
+
+      lexer.getAllTokens
     }
     val size = tokens.size
 
@@ -204,14 +213,12 @@ object Lexer {
     while (i < size) {
       val token = tokens(i)
       token.getType match {
-        case ID =>
-          if (peek(i + 1, _.getText == "("))
-            add(token, FunTextAttributes)
-        case NL =>
         case NUM =>
           add(token, ConstantTextAttributes)
         case SSTRING =>
           add(token, StringTextAttributes)
+        case COMMENT | LINE_COMMENT =>
+          add(token, CommentTextAttributes)
         case _ =>
           val text = token.getText
           if (propJusts.contains(text))

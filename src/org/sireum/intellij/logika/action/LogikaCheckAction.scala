@@ -51,6 +51,9 @@ import org.sireum.util._
 import LogikaAction._
 
 object LogikaCheckAction {
+
+  object EditorEnabled
+
   val icons = {
     var r = (0 to 6).map(n => IconLoader.getIcon(s"/logika/icon/logika-$n.png"))
     r = r.dropRight(1)
@@ -65,7 +68,7 @@ object LogikaCheckAction {
   val verifiedInfoIcon = IconLoader.getIcon("/logika/icon/logika-verified-info.png")
   val queue = new LinkedBlockingQueue[String]()
   val editorMap = mmapEmpty[String, (Project, Editor)]
-  val logikaKey = new Key[String]("Logika")
+  val logikaKey = new Key[EditorEnabled.type]("Logika")
   val dataKey = new Key[ISeq[RangeHighlighter]]("Logika Data")
   var request: Option[Request] = None
   var processInit = false
@@ -168,7 +171,7 @@ object LogikaCheckAction {
   }
 
   def analyze(project: Project, editor: Editor, isSilent: Boolean): Unit = {
-    if (!"Enabled".equals(editor.getUserData(logikaKey))) return
+    if (EditorEnabled != editor.getUserData(logikaKey)) return
     init(project)
     val input = editor.getDocument.getText
     val isProgramming =
@@ -209,8 +212,15 @@ object LogikaCheckAction {
     }
   }
 
+  def enableEditor(editor: Editor): Unit = {
+    editor.putUserData(logikaKey, EditorEnabled)
+  }
+
   def editorOpened(project: Project, editor: Editor): Unit = {
-    if (!fileExts.contains(getFileExt(project))) return
+    val ext = getFileExt(project)
+    if (!fileExts.contains(ext)) return
+    if (autoFileExts.contains(ext))
+      enableEditor(editor)
     editor.getDocument.addDocumentListener(new DocumentListener {
       override def documentChanged(event: DocumentEvent): Unit = {
         analyze(project, editor, isSilent = true)
@@ -348,7 +358,7 @@ private class LogikaCheckAction extends LogikaAction {
     val editor = FileEditorManager.
       getInstance(project).getSelectedTextEditor
     if (editor == null) return
-    editor.putUserData(logikaKey, "Enabled")
+    enableEditor(editor)
     analyze(project, editor, isSilent = false)
     e.getPresentation.setEnabled(true)
   }

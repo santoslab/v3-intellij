@@ -30,7 +30,8 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 
 object LogikaAction {
-  val fileExts = Set(".sc", ".scala", ".logika", ".lgk")
+  val autoFileExts = Set(".logika", ".lgk")
+  val fileExts = Set(".sc", ".scala", ".txt") ++ autoFileExts
 
   def getFilePath(project: Project): Option[String] = {
     val fem = FileEditorManager.getInstance(project)

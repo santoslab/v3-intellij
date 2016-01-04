@@ -46,6 +46,7 @@ import com.intellij.ui.JBColor
 import com.intellij.util.Consumer
 import org.sireum.intellij.SireumApplicationComponent
 import org.sireum.intellij.logika.LogikaConfigurable
+import org.sireum.intellij.logika.lexer.Lexer
 import org.sireum.logika.message._
 import org.sireum.util._
 import LogikaAction._
@@ -69,7 +70,7 @@ object LogikaCheckAction {
   val queue = new LinkedBlockingQueue[String]()
   val editorMap = mmapEmpty[String, (Project, Editor)]
   val logikaKey = new Key[EditorEnabled.type]("Logika")
-  val dataKey = new Key[ISeq[RangeHighlighter]]("Logika Data")
+  val analysisDataKey = new Key[ISeq[RangeHighlighter]]("Logika Analysis Data")
   var request: Option[Request] = None
   var processInit = false
   var terminated = false
@@ -135,6 +136,8 @@ object LogikaCheckAction {
       val t = new Thread {
         override def run(): Unit = {
           val defaultFrame = icons.length / 2 + 1
+          val countLimit = 2
+          var count = 0
           while (!terminated) {
             if (editorMap.nonEmpty) {
               frame = (frame + 1) % icons.length
@@ -170,8 +173,14 @@ object LogikaCheckAction {
     }
   }
 
+  def isEnabled(editor: Editor): Boolean =
+    EditorEnabled == editor.getUserData(logikaKey)
+
   def analyze(project: Project, editor: Editor, isSilent: Boolean): Unit = {
-    if (EditorEnabled != editor.getUserData(logikaKey)) return
+    if (!isEnabled(editor)) return
+    ApplicationManager.getApplication.invokeLater(
+      (() => Lexer.addSyntaxHighlighter(editor)): Runnable,
+      ((_: Any) => editor.isDisposed): Condition[Any])
     init(project)
     val input = editor.getDocument.getText
     val isProgramming =
@@ -219,8 +228,10 @@ object LogikaCheckAction {
   def editorOpened(project: Project, editor: Editor): Unit = {
     val ext = getFileExt(project)
     if (!fileExts.contains(ext)) return
-    if (autoFileExts.contains(ext))
+    if (autoFileExts.contains(ext)) {
       enableEditor(editor)
+      analyze(project, editor, isSilent = true)
+    }
     editor.getDocument.addDocumentListener(new DocumentListener {
       override def documentChanged(event: DocumentEvent): Unit = {
         analyze(project, editor, isSilent = true)
@@ -232,7 +243,7 @@ object LogikaCheckAction {
       override def mouseMoved(e: EditorMouseEvent): Unit = {
         if (!EditorMouseEventArea.EDITING_AREA.equals(e.getArea))
           return
-        val rhs = editor.getUserData(dataKey)
+        val rhs = editor.getUserData(analysisDataKey)
         if (rhs == null) return
         val component = editor.getContentComponent
         val point = e.getMouseEvent.getPoint
@@ -290,7 +301,7 @@ object LogikaCheckAction {
   }
 
   def processResult(r: Result): Unit =
-    ApplicationManager.getApplication.invokeLater(() => dataKey.synchronized {
+    ApplicationManager.getApplication.invokeLater(() => analysisDataKey.synchronized {
       val tags = r.tags
       val (project, editor) = editorMap.synchronized {
         val pe = editorMap(r.requestId)
@@ -298,11 +309,11 @@ object LogikaCheckAction {
         pe
       }
       val mm = editor.getMarkupModel
-      val rhs = editor.getUserData(dataKey)
+      val rhs = editor.getUserData(analysisDataKey)
       if (rhs != null)
         for (rh <- rhs)
           mm.removeHighlighter(rh)
-      editor.putUserData(dataKey, null)
+      editor.putUserData(analysisDataKey, null)
       val (lTags, nlTags) = tags.partition(_.isInstanceOf[UriTag with LocationInfoTag with MessageTag])
       if (!r.isSilent) notifyHelper(project, nlTags)
       if (lTags.isEmpty) return
@@ -332,7 +343,7 @@ object LogikaCheckAction {
             })
             rhs :+= rh
         }
-        editor.putUserData(dataKey, rhs)
+        editor.putUserData(analysisDataKey, rhs)
       }
     })
 }

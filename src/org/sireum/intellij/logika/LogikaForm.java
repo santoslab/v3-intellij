@@ -35,4 +35,8 @@ public abstract class LogikaForm {
     protected JTextField timeoutTextField;
     protected JCheckBox checkSatCheckBox;
     protected JCheckBox autoCheckBox;
+    protected JLabel logoLabel;
+    protected JPanel headerPanel;
+    protected JLabel titleLabel;
+    protected JLabel subtitleLabel;
 }

@@ -31,6 +31,7 @@ import javax.swing.event.{DocumentEvent, DocumentListener}
 
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.options.Configurable
+import com.intellij.openapi.util.IconLoader
 import com.intellij.ui.JBColor
 import org.sireum.util._
 
@@ -43,6 +44,7 @@ object LogikaConfigurable {
   private[logika] var timeout: Natural = 2000
   private[logika] var autoEnabled = false
   private[logika] var checkSat = false
+  private val logo = IconLoader.getIcon("/logika/icon/logika-logo.png")
 
   def loadConfiguration(): Unit = {
     val pc = PropertiesComponent.getInstance
@@ -105,6 +107,8 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
       timeoutLabel.setForeground(if (validTimeout) fgColor else JBColor.red)
       timeoutTextField.setToolTipText(if (validTimeout) "OK" else "Must be at least 200.")
     }
+
+    logoLabel.setIcon(logo)
 
     load()
 

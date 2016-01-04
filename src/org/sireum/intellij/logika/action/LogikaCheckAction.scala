@@ -246,11 +246,7 @@ object LogikaCheckAction {
         override def run(): Unit = {
           Notifications.Bus.notify(n, project)
           Thread.sleep(5000)
-          ApplicationManager.getApplication.invokeLater(new Runnable {
-            override def run(): Unit = {
-              n.expire()
-            }
-          })
+          ApplicationManager.getApplication.invokeLater(() => n.expire())
         }
       }.start()
 
@@ -284,51 +280,49 @@ object LogikaCheckAction {
   }
 
   def processResult(r: Result): Unit =
-    ApplicationManager.getApplication.invokeLater(new Runnable {
-      override def run(): Unit = dataKey.synchronized {
-        val tags = r.tags
-        val (project, editor) = editorMap.synchronized {
-          val pe = editorMap(r.requestId)
-          editorMap -= r.requestId
-          pe
-        }
+    ApplicationManager.getApplication.invokeLater(() => dataKey.synchronized {
+      val tags = r.tags
+      val (project, editor) = editorMap.synchronized {
+        val pe = editorMap(r.requestId)
+        editorMap -= r.requestId
+        pe
+      }
+      val mm = editor.getMarkupModel
+      val rhs = editor.getUserData(dataKey)
+      if (rhs != null)
+        for (rh <- rhs)
+          mm.removeHighlighter(rh)
+      editor.putUserData(dataKey, null)
+      val (lTags, nlTags) = tags.partition(_.isInstanceOf[UriTag with LocationInfoTag with MessageTag])
+      if (!r.isSilent) notifyHelper(project, nlTags)
+      if (lTags.isEmpty) return
+      if (!editor.isDisposed) {
         val mm = editor.getMarkupModel
-        val rhs = editor.getUserData(dataKey)
-        if (rhs != null)
-          for (rh <- rhs)
-            mm.removeHighlighter(rh)
-        editor.putUserData(dataKey, null)
-        val (lTags, nlTags) = tags.partition(_.isInstanceOf[UriTag with LocationInfoTag with MessageTag])
-        if (!r.isSilent) notifyHelper(project, nlTags)
-        if (lTags.isEmpty) return
-        if (!editor.isDisposed) {
-          val mm = editor.getMarkupModel
-          var rhs = ivectorEmpty[RangeHighlighter]
-          for (lTag <- lTags) (lTag: @unchecked) match {
-            case tag: UriTag with LocationInfoTag with MessageTag =>
-              val start = tag.offset
-              val end = tag.offset + tag.length
-              val (ta, icon) = tag match {
-                case _: ErrorTag | _: InternalError => (ErrorTextAttributes, gutterErrorIcon)
-                case _: WarningTag => (WarningTextAttributes, gutterWarningIcon)
-                case _: InfoTag => (InfoTextAttributes, gutterInfoIcon)
-              }
-              val rh = mm.addRangeHighlighter(start, end, 1000000, ta, HighlighterTargetArea.EXACT_RANGE)
-              rh.setErrorStripeTooltip(tag.message)
-              rh.setThinErrorStripeMark(false)
-              rh.setGutterIconRenderer(new GutterIconRenderer {
-                override def getIcon = icon
+        var rhs = ivectorEmpty[RangeHighlighter]
+        for (lTag <- lTags) (lTag: @unchecked) match {
+          case tag: UriTag with LocationInfoTag with MessageTag =>
+            val start = tag.offset
+            val end = tag.offset + tag.length
+            val (ta, icon) = tag match {
+              case _: ErrorTag | _: InternalError => (ErrorTextAttributes, gutterErrorIcon)
+              case _: WarningTag => (WarningTextAttributes, gutterWarningIcon)
+              case _: InfoTag => (InfoTextAttributes, gutterInfoIcon)
+            }
+            val rh = mm.addRangeHighlighter(start, end, 1000000, ta, HighlighterTargetArea.EXACT_RANGE)
+            rh.setErrorStripeTooltip(tag.message)
+            rh.setThinErrorStripeMark(false)
+            rh.setGutterIconRenderer(new GutterIconRenderer {
+              override def getIcon = icon
 
-                override def getTooltipText = tag.message
+              override def getTooltipText = tag.message
 
-                override def equals(other: Any) = false
+              override def equals(other: Any) = false
 
-                override def hashCode = System.identityHashCode(this)
-              })
-              rhs :+= rh
-          }
-          editor.putUserData(dataKey, rhs)
+              override def hashCode = System.identityHashCode(this)
+            })
+            rhs :+= rh
         }
+        editor.putUserData(dataKey, rhs)
       }
     })
 }

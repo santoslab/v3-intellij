@@ -25,8 +25,6 @@
 
 package org.sireum.intellij.logika.action
 
-import java.awt.event.KeyEvent
-
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -40,10 +38,8 @@ trait LogikaInsertSymbol extends LogikaAction {
       getInstance(project).getSelectedTextEditor
     if (editor == null) return
     val document = editor.getDocument
-    WriteCommandAction.runWriteCommandAction(project, new Runnable {
-      override def run(): Unit =
-        document.insertString(editor.getCaretModel.getOffset, symbol)
-    })
+    WriteCommandAction.runWriteCommandAction(project,
+      (() => document.insertString(editor.getCaretModel.getOffset, symbol)): Runnable)
   }
 }
 

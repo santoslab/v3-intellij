@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ScalaCompilerConfiguration">
+    <parameters>
+      <parameter value="-target:jvm-1.8" />
+      <parameter value="-Ybackend:GenBCode" />
+      <parameter value="-Ydelambdafy:method" />
+      <parameter value="-feature" />
+      <parameter value="-Xexperimental" />
+      <parameter value="-optimize" />
+      <parameter value="-Yopt:l:classpath" />
+    </parameters>
+  </component>
+</project>

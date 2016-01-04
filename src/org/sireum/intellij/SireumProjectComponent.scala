@@ -25,15 +25,11 @@
 
 package org.sireum.intellij
 
-import com.intellij.openapi.components.{ComponentManager, ProjectComponent}
-import com.intellij.openapi.editor.event.{EditorMouseEventArea, EditorMouseEvent, EditorMouseMotionListener}
-import com.intellij.openapi.editor.markup.RangeHighlighter
+import com.intellij.openapi.components.ProjectComponent
 import com.intellij.openapi.fileEditor.{FileEditorManagerEvent, FileEditorManagerListener, FileEditorManager}
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.util.messages.MessageBus
 import org.sireum.intellij.logika.action.LogikaCheckAction
-import org.sireum.intellij.logika.action.LogikaCheckAction.LogikaTextAttributes
 
 class SireumProjectComponent(project: Project) extends ProjectComponent {
   override def projectClosed(): Unit = {}

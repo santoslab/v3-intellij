@@ -33,8 +33,6 @@ import com.intellij.openapi.components._
 import com.intellij.openapi.fileChooser._
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.util.Consumer
 import org.sireum.util._
 import org.sireum.util.jvm.Exec
 
@@ -75,11 +73,7 @@ object SireumApplicationComponent {
     desc.setTitle("Select Sireum v3 directory")
     FileChooser.chooseFile(
       desc,
-      project, null, new Consumer[VirtualFile] {
-        override def consume(t: VirtualFile): Unit = {
-          pathOpt = Some(t.getCanonicalPath)
-        }
-      })
+      project, null, t => pathOpt = Some(t.getCanonicalPath))
     pathOpt.foreach(path =>
       if (checkSireumDir(path).isEmpty)
         Messages.showMessageDialog(project, sireumInvalid(path),
@@ -149,7 +143,6 @@ object SireumApplicationComponent {
       case Some(s) =>
         if (s.lines.exists(
           _.trim == "Sireum: A Software Analysis Platform (v3)")) {
-          val pc = PropertiesComponent.getInstance
           Some(new File(path))
         } else None
       case _ => None

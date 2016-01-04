@@ -57,7 +57,6 @@ import LogikaAction._
 trait LogikaAction extends AnAction {
   final override def update(e: AnActionEvent): Unit = {
     val project = e.getProject
-    val am = ActionManager.getInstance
     e.getPresentation.setVisible(project != null &&
       fileExts.contains(getFileExt(project)))
   }

@@ -26,7 +26,6 @@
 package org.sireum.intellij
 
 import java.awt.Color
-import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing.JComponent
 import javax.swing.event.{DocumentEvent, DocumentListener}
 
@@ -85,15 +84,12 @@ final class SireumConfigurable extends SireumForm with Configurable {
       def update(): Unit = updateSireumHome(sireumHomeTextField.getText)
     })
 
-    sireumHomeButton.addActionListener(new ActionListener() {
-      override def actionPerformed(e: ActionEvent): Unit =
-        browseSireumHome(null) match {
-          case Some(p) =>
-            updateSireumHome(p)
-            if (validSireumHome) sireumHomeTextField.setText(p)
-            else updateSireumHome(sireumHomeTextField.getText)
-          case _ =>
-        }
+    sireumHomeButton.addActionListener(e => browseSireumHome(null) match {
+      case Some(p) =>
+        updateSireumHome(p)
+        if (validSireumHome) sireumHomeTextField.setText(p)
+        else updateSireumHome(sireumHomeTextField.getText)
+      case _ =>
     })
 
     updateSireumHome(sireumHomeValue)

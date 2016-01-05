@@ -25,163 +25,57 @@
 
 package org.sireum.intellij.logika.lexer
 
-import java.awt.{Color, Font}
+import java.awt.Font
 import java.io.StringReader
 
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.editor.markup.{HighlighterTargetArea, TextAttributes, RangeHighlighter}
 import com.intellij.openapi.util.Key
-import com.intellij.util.ui.UIUtil
 import org.antlr.v4.runtime.{ANTLRInputStream, Token}
 import org.sireum.util._
 
 object Lexer {
-  val syntaxHighlightingDataKey = new Key[ISeq[RangeHighlighter]]("Logika Highlighting Data")
-  val propJusts = Set("assume", "premise", "andi", "^i", "ande1",
+  final val syntaxHighlightingDataKey = new Key[ISeq[RangeHighlighter]]("Logika Highlighting Data")
+  final val propJusts = Set("assume", "premise", "andi", "^i", "ande1",
     "^e1", "ande2", "^e2", "ori1", "Vi1", "ori2", "Vi2", "ore", "Ve",
     "impliesi", "impliese", "noti", "negi", "note", "nege", "bottome",
     "falsee", "Pbc")
-  val predJusts = Set("foralli", "alli", "Ai", "foralle", "alle", "Ae",
+  final val predJusts = Set("foralli", "alli", "Ai", "foralle", "alle", "Ae",
     "existsi", "somei", "Ei", "existse", "somee", "Ee")
-  val progJusts = Set("subst1", "subst2", "algebra", "auto", "invariant")
-  val propOps = Set("not", "and", "^", "or", "V", "implies")
-  val predOps = Set("forall", "all", "A", "exists", "some", "E")
-  val progOps = Set("*", "/", "%", "+", "-", "+:", ":+", "<", "<=",
+  final val progJusts = Set("subst1", "subst2", "algebra", "auto", "invariant")
+  final val propOps = Set("not", "and", "^", "or", "V", "implies")
+  final val predOps = Set("forall", "all", "A", "exists", "some", "E")
+  final val progOps = Set("*", "/", "%", "+", "-", "+:", ":+", "<", "<=",
     "≤", ">", ">=", "≥", "=", "==", "!=", "≠")
-  val types = Set("B", "Z", "ZS")
-  val constants = Set("true", "T", "⊤", "false", "F")
-  val constantJusts = Set("_|_", "⊥")
-  val andJustFollow = Set("i", "e1", "e2")
-  val orJustFollow = Set("i1", "i2", "e")
-  val propIeJustFirst = Set("->", "→", "!", "~", "¬")
-  val ieJustFollow = Set("i", "e")
-  val keywords = Set("abstract", "case", "catch", "class", "def",
+  final val justAndOps = propJusts ++ predJusts ++ progJusts ++ propOps ++ predOps
+  final val types = Set("B", "Z", "ZS")
+  final val constants = Set("true", "T", "⊤", "false", "F")
+  final val constantJusts = Set("_|_", "⊥")
+  final val andJustFollow = Set("i", "e1", "e2")
+  final val orJustFollow = Set("i1", "i2", "e")
+  final val propIeJustFirst = Set("->", "→", "!", "~", "¬")
+  final val ieJustFollow = Set("i", "e")
+  final val keywords = Set("abstract", "case", "catch", "class", "def",
     "do", "else", "extends", "final", "finally", "for", "forSome",
     "if", "implicit", "import", "lazy", "macro", "match", "new",
     "null", "object", "override", "package", "private",
     "protected", "return", "sealed", "super", "this", "throw",
     "trait", "try", "type", "val", "var", "while", "with", "yield")
 
-  val propJustDarkColor = new Color(0x82, 0x48, 0x92)
-  val predJustDarkColor = propJustDarkColor
-  val progJustDarkColor = propJustDarkColor
-  val propJustColor = progJustDarkColor
-  val progJustColor = propJustDarkColor
-  val typeDarkColor = new Color(0x49, 0x73, 0x70)
-  val typeColor = new Color(0x43, 0xa9, 0xac)
-  val constantDarkColor = new Color(0x68, 0x97, 0xbb)
-  val constantColor = new Color(0, 0, 0xdd)
-  val stringDarkColor = new Color(0x6a, 0x87, 0x59)
-  val stringColor = new Color(0, 0x80, 0)
-  val logikaDarkColor = new Color(0x60, 0x60, 0x60)
-  val logikaColor = new Color(0x90, 0x90, 0x90)
-  val keywordDarkColor = new Color(0xcc, 0x78, 0x32)
-  val keywordColor = new Color(0, 0, 0x80)
-  val commentDarkColor = new Color(0x7c, 0x7c, 0x7c)
-  val commentColor = new Color(0x8c, 0x8c, 0x8c)
-  val plainDarkColor = new Color(0xa9, 0xb7, 0xc6)
-  val plainColor = new Color(0x00, 0x00, 0x00)
-
-  def isDark = UIUtil.isUnderDarcula
-
   sealed trait LogikaHighlightingTextAttributes
-
-  object PropJustTextAttributes
-    extends TextAttributes(null, null, null, null, Font.BOLD)
-    with LogikaHighlightingTextAttributes {
-    override def getForegroundColor =
-      if (isDark) propJustDarkColor else propJustColor
-  }
-
-  object PredJustTextAttributes
-    extends TextAttributes(predJustDarkColor, null, null, null, Font.BOLD)
-    with LogikaHighlightingTextAttributes
-
-  object ProgJustTextAttributes
-    extends TextAttributes(null, null, null, null, Font.BOLD)
-    with LogikaHighlightingTextAttributes {
-    override def getForegroundColor =
-      if (isDark) progJustDarkColor else progJustColor
-  }
-
-  object PropOpTextAttributes
-    extends TextAttributes(null, null, null, null, Font.PLAIN)
-    with LogikaHighlightingTextAttributes {
-    override def getForegroundColor =
-      if (isDark) propJustDarkColor else propJustColor
-  }
-
-  object PredOpTextAttributes
-    extends TextAttributes(predJustDarkColor, null, null, null, Font.PLAIN)
-    with LogikaHighlightingTextAttributes
-
-  object ProgOpTextAttributes
-    extends TextAttributes(null, null, null, null, Font.BOLD)
-    with LogikaHighlightingTextAttributes {
-    override def getForegroundColor =
-      if (isDark) plainDarkColor else plainColor
-  }
-
-  object TypeTextAttributes
-    extends TextAttributes(null, null, null, null, Font.PLAIN)
-    with LogikaHighlightingTextAttributes {
-    override def getForegroundColor =
-      if (isDark) typeDarkColor else typeColor
-  }
-
-  object ConstantTextAttributes
-    extends TextAttributes(null, null, null, null, Font.PLAIN)
-    with LogikaHighlightingTextAttributes {
-    override def getForegroundColor =
-      if (isDark) constantDarkColor else constantColor
-  }
-
-  object StringTextAttributes
-    extends TextAttributes(null, null, null, null, Font.PLAIN)
-    with LogikaHighlightingTextAttributes {
-    override def getForegroundColor =
-      if (isDark) stringDarkColor else stringColor
-  }
-
-  object LogikaTextAttributes
-    extends TextAttributes(null, null, null, null, Font.PLAIN)
-    with LogikaHighlightingTextAttributes {
-    override def getForegroundColor =
-      if (isDark) logikaDarkColor else logikaColor
-  }
 
   object FunTextAttributes
     extends TextAttributes(null, null, null, null, Font.ITALIC)
     with LogikaHighlightingTextAttributes
 
-  object KeywordTextAttributes
-    extends TextAttributes(null, null, null, null, Font.BOLD)
-    with LogikaHighlightingTextAttributes {
-    override def getForegroundColor =
-      if (isDark) keywordDarkColor else keywordColor
-  }
-
-  object PlainTextAttributes
-    extends TextAttributes(null, null, null, null, Font.PLAIN)
-    with LogikaHighlightingTextAttributes {
-    override def getForegroundColor =
-      if (isDark) plainDarkColor else plainColor
-  }
-
-  object CommentTextAttributes
-    extends TextAttributes(null, null, null, null, Font.PLAIN)
-    with LogikaHighlightingTextAttributes {
-    override def getForegroundColor =
-      if (isDark) commentDarkColor else commentColor
-  }
-
-  def addSyntaxHighlighter(editor: Editor): Unit = {
+  def addSyntaxHighlighter(editor: Editor, isProgramming: Boolean): Unit = {
     val mm = editor.getMarkupModel
     var rhs = ivectorEmpty[RangeHighlighter]
-    def add(t: Token, ta: TextAttributes): Unit = {
+
+    def add(t: Token, ta: TextAttributes): Unit =
       rhs :+= mm.addRangeHighlighter(t.getStartIndex, t.getStopIndex + 1,
         900000, ta, HighlighterTargetArea.EXACT_RANGE)
-    }
 
     Option(editor.getUserData(syntaxHighlightingDataKey)) match {
       case Some(prevRhs) =>
@@ -197,9 +91,7 @@ object Lexer {
     import Antlr4LogikaLexer._
 
     val tokens: CSeq[Token] = {
-
       import scala.collection.JavaConversions._
-
       lexer.getAllTokens
     }
     val size = tokens.size
@@ -207,82 +99,91 @@ object Lexer {
     def peek(i: Int, f: Token => Boolean): Boolean =
       if (i < size) f(tokens(i)) else false
 
+    val cs = editor.getColorsScheme
+    val plainAttr = new TextAttributes(cs.getDefaultForeground, null, null, null, Font.PLAIN)
+    val stringAttr = cs.getAttributes(TextAttributesKey.find("Scala String"))
+    val keywordAttr = cs.getAttributes(TextAttributesKey.find("Scala Keyword"))
+    val lineCommentAttr = cs.getAttributes(TextAttributesKey.find("Scala Line comment"))
+    val blockCommentAttr = cs.getAttributes(TextAttributesKey.find("Scala Block comment"))
+    val logikaAttr = new TextAttributes(lineCommentAttr.getForegroundColor, null, null, null, Font.PLAIN)
+    val typeAttr = cs.getAttributes(TextAttributesKey.find("Scala Type Alias"))
+    val constantAttr = cs.getAttributes(TextAttributesKey.find("Scala Number"))
+    val justOpAttr = new TextAttributes(
+      cs.getAttributes(TextAttributesKey.find("DEFAULT_STATIC_FIELD")).getForegroundColor,
+      null, null, null, Font.PLAIN)
+
     mm.addRangeHighlighter(0, editor.getDocument.getText.length,
-      800000, PlainTextAttributes, HighlighterTargetArea.EXACT_RANGE)
+      800000, plainAttr, HighlighterTargetArea.EXACT_RANGE)
+
     var i = 0
     while (i < size) {
       val token = tokens(i)
       token.getType match {
+        case ID if !isProgramming =>
+          if (peek(i + 1, _.getText == "("))
+            add(token, FunTextAttributes)
         case NUM =>
-          add(token, ConstantTextAttributes)
+          add(token, constantAttr)
         case SSTRING =>
-          add(token, StringTextAttributes)
-        case COMMENT | LINE_COMMENT =>
-          add(token, CommentTextAttributes)
+          add(token, stringAttr)
+        case COMMENT =>
+          add(token, blockCommentAttr)
+        case LINE_COMMENT =>
+          add(token, lineCommentAttr)
         case _ =>
           val text = token.getText
-          if (propJusts.contains(text))
-            add(token, PropJustTextAttributes)
-          else if (predJusts.contains(text))
-            add(token, PredJustTextAttributes)
-          else if (progJusts.contains(text))
-            add(token, ProgJustTextAttributes)
-          else if (propOps.contains(text))
-            add(token, PropOpTextAttributes)
-          else if (predOps.contains(text))
-            add(token, PredOpTextAttributes)
-          else if (progOps.contains(text))
-            add(token, ProgOpTextAttributes)
+          if (justAndOps.contains(text))
+            add(token, justOpAttr)
           else if (types.contains(text))
-            add(token, TypeTextAttributes)
+            add(token, typeAttr)
           else if (keywords.contains(text))
-            add(token, KeywordTextAttributes)
+            add(token, keywordAttr)
           else if (text == "l\"\"\"") {
-            add(token, LogikaTextAttributes)
+            add(token, logikaAttr)
             if (i + 1 < size && tokens(i + 1).getText == "{")
-              add(tokens(i + 1), LogikaTextAttributes)
+              add(tokens(i + 1), logikaAttr)
           } else if (text == "\"\"\"") {
-            add(token, LogikaTextAttributes)
+            add(token, logikaAttr)
             val tM1 = tokens(i - 1)
             if (tM1.getText == "}")
-              add(tM1, LogikaTextAttributes)
+              add(tM1, logikaAttr)
           } else if (constantJusts.contains(text)) {
             if (peek(i + 1, _.getText == "e")) {
-              add(token, PropJustTextAttributes)
-              add(tokens(i + 1), PropJustTextAttributes)
+              add(token, justOpAttr)
+              add(tokens(i + 1), justOpAttr)
               i += 1
-            } else add(token, ConstantTextAttributes)
+            } else add(token, constantAttr)
           } else if (text == "&&" || text == "∧") {
             if (peek(i + 1,
               t => andJustFollow.contains(t.getText)) &&
               peek(i + 2, _.getType == NUM)) {
-              add(token, PropJustTextAttributes)
-              add(tokens(i + 1), PropJustTextAttributes)
+              add(token, justOpAttr)
+              add(tokens(i + 1), justOpAttr)
               i += 1
-            } else add(token, PropOpTextAttributes)
+            } else add(token, justOpAttr)
           } else if (text == "||" || text == "∨") {
             if (peek(i + 1,
               t => orJustFollow.contains(t.getText)) &&
               peek(i + 2, _.getType == NUM)) {
-              add(token, PropJustTextAttributes)
-              add(tokens(i + 1), PropJustTextAttributes)
+              add(token, justOpAttr)
+              add(tokens(i + 1), justOpAttr)
               i += 1
-            } else add(token, PropOpTextAttributes)
+            } else add(token, justOpAttr)
           } else if (propIeJustFirst.contains(text)) {
             if (peek(i + 1,
               t => ieJustFollow.contains(t.getText)) &&
               peek(i + 2, _.getType == NUM)) {
-              add(token, PropJustTextAttributes)
-              add(tokens(i + 1), PropJustTextAttributes)
+              add(token, justOpAttr)
+              add(tokens(i + 1), justOpAttr)
               i += 1
-            } else add(token, PropOpTextAttributes)
+            } else add(token, justOpAttr)
           } else if (text == "∀" || text == "∃") {
             if (peek(i + 1, t => ieJustFollow.contains(t.getText)) &&
               peek(i + 2, t => t.getType == ID || t.getType == NUM)) {
-              add(token, PredJustTextAttributes)
-              add(tokens(i + 1), PredJustTextAttributes)
+              add(token, justOpAttr)
+              add(tokens(i + 1), justOpAttr)
               i += 1
-            } else add(token, PredOpTextAttributes)
+            } else add(token, justOpAttr)
           }
       }
       i += 1

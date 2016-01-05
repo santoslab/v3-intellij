@@ -25,7 +25,7 @@
 
 package org.sireum.intellij.logika.action
 
-import com.intellij.openapi.actionSystem.{ActionManager, AnActionEvent, AnAction}
+import com.intellij.openapi.actionSystem.{AnActionEvent, AnAction}
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 

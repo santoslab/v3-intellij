@@ -30,6 +30,7 @@ import java.awt.{Color, Font}
 import java.util.concurrent._
 import javax.swing.Icon
 
+import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.editor.event._
 
 import com.intellij.notification.{NotificationType, Notification, Notifications}
@@ -81,12 +82,6 @@ object LogikaCheckAction {
 
   sealed trait LogikaTextAttributes
 
-  object ErrorTextAttributes
-    extends TextAttributes(null, null, JBColor.red, EffectType.WAVE_UNDERSCORE, Font.PLAIN)
-    with LogikaTextAttributes {
-    setErrorStripeColor(Color.red)
-  }
-
   object WarningTextAttributes
     extends TextAttributes(null, null, JBColor.orange, EffectType.WAVE_UNDERSCORE, Font.PLAIN)
     with LogikaTextAttributes {
@@ -136,8 +131,6 @@ object LogikaCheckAction {
       val t = new Thread {
         override def run(): Unit = {
           val defaultFrame = icons.length / 2 + 1
-          val countLimit = 2
-          var count = 0
           while (!terminated) {
             if (editorMap.nonEmpty) {
               frame = (frame + 1) % icons.length
@@ -178,16 +171,16 @@ object LogikaCheckAction {
 
   def analyze(project: Project, editor: Editor, isSilent: Boolean): Unit = {
     if (!isEnabled(editor)) return
-    ApplicationManager.getApplication.invokeLater(
-      (() => Lexer.addSyntaxHighlighter(editor)): Runnable,
-      ((_: Any) => editor.isDisposed): Condition[Any])
-    init(project)
-    val input = editor.getDocument.getText
     val isProgramming =
       getFileExt(project) match {
         case ".scala" | ".sc" => true
         case _ => false
       }
+    ApplicationManager.getApplication.invokeLater(
+      (() => Lexer.addSyntaxHighlighter(editor, isProgramming)): Runnable,
+      ((_: Any) => editor.isDisposed): Condition[Any])
+    init(project)
+    val input = editor.getDocument.getText
     val proofs = ivector(ProofFile(Some(getFilePath(project).get), input))
     val (t, requestId) = {
       val t = System.currentTimeMillis
@@ -232,6 +225,7 @@ object LogikaCheckAction {
       enableEditor(editor)
       analyze(project, editor, isSilent = true)
     }
+
     editor.getDocument.addDocumentListener(new DocumentListener {
       override def documentChanged(event: DocumentEvent): Unit = {
         analyze(project, editor, isSilent = true)
@@ -320,14 +314,18 @@ object LogikaCheckAction {
       if (!editor.isDisposed) {
         val mm = editor.getMarkupModel
         var rhs = ivectorEmpty[RangeHighlighter]
+        val cs = editor.getColorsScheme
+        val errorAttr = cs.getAttributes(TextAttributesKey.find("ERRORS_ATTRIBUTES"))
+        val warningAttr = cs.getAttributes(TextAttributesKey.find("WARNING_ATTRIBUTES"))
+        val infoAttr = cs.getAttributes(TextAttributesKey.find("TYPO"))
         for (lTag <- lTags) (lTag: @unchecked) match {
           case tag: UriTag with LocationInfoTag with MessageTag =>
             val start = tag.offset
             val end = tag.offset + tag.length
             val (ta, icon) = tag match {
-              case _: ErrorTag | _: InternalError => (ErrorTextAttributes, gutterErrorIcon)
-              case _: WarningTag => (WarningTextAttributes, gutterWarningIcon)
-              case _: InfoTag => (InfoTextAttributes, gutterInfoIcon)
+              case _: ErrorTag | _: InternalError => (errorAttr, gutterErrorIcon)
+              case _: WarningTag => (warningAttr, gutterWarningIcon)
+              case _: InfoTag => (infoAttr, gutterInfoIcon)
             }
             val rh = mm.addRangeHighlighter(start, end, 1000000, ta, HighlighterTargetArea.EXACT_RANGE)
             rh.setErrorStripeTooltip(tag.message)

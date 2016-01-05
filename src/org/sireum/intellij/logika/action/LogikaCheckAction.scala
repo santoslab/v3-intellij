@@ -161,9 +161,11 @@ object LogikaCheckAction {
         case ".scala" | ".sc" => true
         case _ => false
       }
-    ApplicationManager.getApplication.invokeLater(
-      (() => Lexer.addSyntaxHighlighter(editor, isProgramming)): Runnable,
-      ((_: Any) => editor.isDisposed): Condition[Any])
+    if (LogikaConfigurable.syntaxHighlighting)
+      ApplicationManager.getApplication.invokeLater(
+        (() => Lexer.addSyntaxHighlighter(editor, isProgramming)): Runnable,
+        ((_: Any) => editor.isDisposed): Condition[Any])
+    if (!LogikaConfigurable.backgroundAnalysis) return
     init(project)
     val input = editor.getDocument.getText
     val proofs = ivector(ProofFile(Some(getFilePath(project).get), input))
@@ -214,7 +216,8 @@ object LogikaCheckAction {
 
     editor.getDocument.addDocumentListener(new DocumentListener {
       override def documentChanged(event: DocumentEvent): Unit = {
-        analyze(project, editor, isSilent = true)
+        if (LogikaConfigurable.backgroundAnalysis)
+          analyze(project, editor, isSilent = true)
       }
 
       override def beforeDocumentChange(event: DocumentEvent): Unit = {}

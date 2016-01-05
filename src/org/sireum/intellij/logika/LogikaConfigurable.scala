@@ -36,10 +36,14 @@ import com.intellij.ui.JBColor
 import org.sireum.util._
 
 object LogikaConfigurable {
+  private val syntaxHighlightingKey = "org.sireum.logika.highlighting"
+  private val backgroundAnalysisKey = "org.sireum.logika.background"
   private val idleKey = "org.sireum.logika.idle"
   private val timeoutKey = "org.sireum.logika.timeout"
   private val autoEnabledKey = "org.sireum.logika.auto"
   private val checkSatKey = "org.sireum.logika.checkSat"
+  private[logika] var syntaxHighlighting = true
+  private[logika] var backgroundAnalysis = true
   private[logika] var idle: Natural = 2000
   private[logika] var timeout: Natural = 2000
   private[logika] var autoEnabled = false
@@ -48,6 +52,8 @@ object LogikaConfigurable {
 
   def loadConfiguration(): Unit = {
     val pc = PropertiesComponent.getInstance
+    syntaxHighlighting = pc.getBoolean(syntaxHighlightingKey, syntaxHighlighting)
+    backgroundAnalysis = pc.getBoolean(backgroundAnalysisKey, backgroundAnalysis)
     idle = pc.getInt(idleKey, idle)
     timeout = pc.getInt(timeoutKey, timeout)
     autoEnabled = pc.getBoolean(autoEnabledKey, autoEnabled)
@@ -56,6 +62,8 @@ object LogikaConfigurable {
 
   def saveConfiguration(): Unit = {
     val pc = PropertiesComponent.getInstance
+    pc.setValue(syntaxHighlightingKey, syntaxHighlighting.toString)
+    pc.setValue(backgroundAnalysisKey, backgroundAnalysis.toString)
     pc.setValue(idleKey, idle.toString)
     pc.setValue(timeoutKey, timeout.toString)
     pc.setValue(autoEnabledKey, autoEnabled.toString)
@@ -75,6 +83,8 @@ import LogikaConfigurable._
 
 final class LogikaConfigurable extends LogikaForm with Configurable {
 
+  private var syntaxHighlightingValue = syntaxHighlighting
+  private var backgroundAnalysisValue = backgroundAnalysis
   private var idleValue = idle
   private var timeoutValue = timeout
   private var autoEnabledValue = autoEnabled
@@ -89,7 +99,9 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
 
   override def isModified: Boolean =
     validIdle && validTimeout &&
-      (idleTextField.getText != idleValue.toString ||
+      (highlightingCheckBox.isSelected != syntaxHighlighting ||
+        backgroundCheckBox.isSelected != backgroundAnalysis ||
+        idleTextField.getText != idleValue.toString ||
         timeoutTextField.getText != timeoutValue.toString ||
         autoCheckBox.isSelected != autoEnabledValue ||
         checkSatCheckBox.isSelected != checkSatValue)
@@ -116,6 +128,11 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
 
     fgColor = idleLabel.getForeground
 
+    backgroundCheckBox.addActionListener(_ => {
+      idleLabel.setEnabled(backgroundCheckBox.isSelected)
+      idleTextField.setEnabled(backgroundCheckBox.isSelected)
+    })
+
     idleTextField.getDocument.addDocumentListener(new DocumentListener {
       override def insertUpdate(e: DocumentEvent): Unit = updateIdle()
 
@@ -138,15 +155,19 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
   override def disposeUIResources(): Unit = {}
 
   override def apply(): Unit = {
+    syntaxHighlighting = highlightingCheckBox.isSelected
+    backgroundAnalysis = backgroundCheckBox.isSelected
     idle = parseGe200(idleTextField.getText).getOrElse(idle)
-    timeoutValue = parseGe200(timeoutTextField.getText).getOrElse(timeoutValue)
-    autoEnabledValue = autoCheckBox.isSelected
-    checkSatValue = checkSatCheckBox.isSelected
+    timeout = parseGe200(timeoutTextField.getText).getOrElse(timeoutValue)
+    autoEnabled = autoCheckBox.isSelected
+    checkSat = checkSatCheckBox.isSelected
     saveConfiguration()
     load()
   }
 
   def load(): Unit = {
+    syntaxHighlightingValue = syntaxHighlighting
+    backgroundAnalysisValue = backgroundAnalysis
     idleValue = idle
     timeoutValue = timeout
     autoEnabledValue = autoEnabled
@@ -154,6 +175,8 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
   }
 
   override def reset(): Unit = {
+    highlightingCheckBox.setSelected(syntaxHighlightingValue)
+    backgroundCheckBox.setSelected(backgroundAnalysisValue)
     idleTextField.setText(idleValue.toString)
     timeoutTextField.setText(timeoutValue.toString)
     autoCheckBox.setSelected(autoEnabledValue)

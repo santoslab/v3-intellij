@@ -26,7 +26,6 @@
 package org.sireum.intellij.logika.action
 
 import java.awt.event.MouseEvent
-import java.awt.{Color, Font}
 import java.util.concurrent._
 import javax.swing.Icon
 
@@ -43,7 +42,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util._
 import com.intellij.openapi.wm.StatusBarWidget.{IconPresentation, WidgetPresentation, PlatformType}
 import com.intellij.openapi.wm.{StatusBar, StatusBarWidget, WindowManager}
-import com.intellij.ui.JBColor
 import com.intellij.util.Consumer
 import org.sireum.intellij.SireumApplicationComponent
 import org.sireum.intellij.logika.LogikaConfigurable
@@ -72,6 +70,7 @@ object LogikaCheckAction {
   val editorMap = mmapEmpty[String, (Project, Editor)]
   val logikaKey = new Key[EditorEnabled.type]("Logika")
   val analysisDataKey = new Key[ISeq[RangeHighlighter]]("Logika Analysis Data")
+  val statusKey = new Key[Boolean]("Logika Analysis Status")
   var request: Option[Request] = None
   var processInit = false
   var terminated = false
@@ -79,20 +78,6 @@ object LogikaCheckAction {
   final case class Request(time: Long, requestId: String,
                            project: Project, editor: Editor,
                            msgGen: () => String)
-
-  sealed trait LogikaTextAttributes
-
-  object WarningTextAttributes
-    extends TextAttributes(null, null, JBColor.orange, EffectType.WAVE_UNDERSCORE, Font.PLAIN)
-    with LogikaTextAttributes {
-    setErrorStripeColor(Color.yellow)
-  }
-
-  object InfoTextAttributes
-    extends TextAttributes(null, null, JBColor.green, EffectType.WAVE_UNDERSCORE, Font.PLAIN)
-    with LogikaTextAttributes {
-    setErrorStripeColor(Color.green)
-  }
 
   def init(p: Project): Unit = {
     if (!processInit) {
@@ -223,6 +208,7 @@ object LogikaCheckAction {
     if (!fileExts.contains(ext)) return
     if (autoFileExts.contains(ext)) {
       enableEditor(editor)
+      editor.putUserData(statusKey, false)
       analyze(project, editor, isSilent = true)
     }
 
@@ -255,7 +241,8 @@ object LogikaCheckAction {
     })
   }
 
-  def notifyHelper(project: Project, tags: ISeq[Tag]): Unit = {
+  def notifyHelper(project: Project, editor: Editor,
+                   isSilent: Boolean, tags: ISeq[Tag]): Unit = {
     def notify(n: Notification): Unit =
       new Thread() {
         override def run(): Unit = {
@@ -265,13 +252,16 @@ object LogikaCheckAction {
         }
       }.start()
 
+    val status = editor.getUserData(statusKey)
     val lineSep = scala.util.Properties.lineSeparator
     val enlTags = tags.filter(_.isInstanceOf[ErrorTag])
     if (enlTags.nonEmpty) {
-      notify(new Notification(
-        "Sireum Logika", "Logika Error",
-        enlTags.map(_.asInstanceOf[MessageTag].message).mkString(lineSep),
-        NotificationType.ERROR, null))
+      if (!isSilent || status)
+        notify(new Notification(
+          "Sireum Logika", "Logika Error",
+          enlTags.map(_.asInstanceOf[MessageTag].message).mkString(lineSep),
+          NotificationType.ERROR, null))
+      editor.putUserData(statusKey, false)
     }
     val wnlTags = tags.filter(_.isInstanceOf[WarningTag])
     if (wnlTags.nonEmpty) {
@@ -287,10 +277,13 @@ object LogikaCheckAction {
       val (title, icon) =
         if (isVerified) ("Logika Verified", verifiedInfoIcon)
         else ("Logika Information", null)
-      notify(new Notification("Sireum Logika", title, msg,
-        NotificationType.INFORMATION, null) {
-        override def getIcon: Icon = icon
-      })
+      if (!isSilent || (!status && isVerified))
+        notify(new Notification("Sireum Logika", title, msg,
+          NotificationType.INFORMATION, null) {
+          override def getIcon: Icon = icon
+        })
+      if (isVerified)
+        editor.putUserData(statusKey, true)
     }
   }
 
@@ -309,7 +302,7 @@ object LogikaCheckAction {
           mm.removeHighlighter(rh)
       editor.putUserData(analysisDataKey, null)
       val (lTags, nlTags) = tags.partition(_.isInstanceOf[UriTag with LocationInfoTag with MessageTag])
-      if (!r.isSilent) notifyHelper(project, nlTags)
+      notifyHelper(project, editor, r.isSilent, nlTags)
       if (lTags.isEmpty) return
       if (!editor.isDisposed) {
         val mm = editor.getMarkupModel

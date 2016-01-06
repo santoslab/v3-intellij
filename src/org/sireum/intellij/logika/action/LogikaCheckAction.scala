@@ -25,6 +25,7 @@
 
 package org.sireum.intellij.logika.action
 
+import java.awt.Font
 import java.awt.event.MouseEvent
 import java.util.concurrent._
 import javax.swing.Icon
@@ -81,6 +82,7 @@ object LogikaCheckAction {
 
   def init(p: Project): Unit = {
     if (!processInit) {
+      LogikaConfigurable.loadConfiguration()
       processInit =
         SireumApplicationComponent.getSireumProcess(p,
           queue, { s =>
@@ -311,7 +313,10 @@ object LogikaCheckAction {
         val mm = editor.getMarkupModel
         var rhs = ivectorEmpty[RangeHighlighter]
         val cs = editor.getColorsScheme
-        val errorAttr = cs.getAttributes(TextAttributesKey.find("ERRORS_ATTRIBUTES"))
+        val errorColor = cs.getAttributes(
+          TextAttributesKey.find("ERRORS_ATTRIBUTES")).getErrorStripeColor
+        val errorAttr = new TextAttributes(null, errorColor, null, null, Font.PLAIN)
+        errorAttr.setErrorStripeColor(errorColor)
         val warningAttr = cs.getAttributes(TextAttributesKey.find("WARNING_ATTRIBUTES"))
         val infoAttr = cs.getAttributes(TextAttributesKey.find("TYPO"))
         for (lTag <- lTags) (lTag: @unchecked) match {

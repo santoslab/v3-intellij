@@ -45,7 +45,7 @@ import com.intellij.openapi.wm.StatusBarWidget.{IconPresentation, WidgetPresenta
 import com.intellij.openapi.wm.{StatusBar, StatusBarWidget, WindowManager}
 import com.intellij.util.Consumer
 import org.sireum.intellij.SireumApplicationComponent
-import org.sireum.intellij.logika.LogikaConfigurable
+import org.sireum.intellij.logika.{LogikaFileType, LogikaConfigurable}
 import org.sireum.intellij.logika.lexer.Lexer
 import org.sireum.logika.message._
 import org.sireum.util._
@@ -91,7 +91,7 @@ object LogikaCheckAction {
                 case r: Result => processResult(r)
               }
           }, "logika", "--server")
-
+      if (!processInit) return
       val statusBar = WindowManager.getInstance().getStatusBar(p)
       var frame = 0
       val statusIdle = "Sireum Logika is idle"
@@ -178,7 +178,7 @@ object LogikaCheckAction {
     }
     def f(): String = {
       Message.pickleInput(Check(requestId, isSilent,
-        isProgramming, proofs, lastOnly = false,
+        LogikaConfigurable.hint, proofs, lastOnly = false,
         autoEnabled = LogikaConfigurable.autoEnabled,
         timeout = LogikaConfigurable.timeout,
         checkSat = LogikaConfigurable.checkSat))
@@ -209,8 +209,8 @@ object LogikaCheckAction {
 
   def editorOpened(project: Project, editor: Editor): Unit = {
     val ext = getFileExt(project)
-    if (!fileExts.contains(ext)) return
-    if (autoFileExts.contains(ext)) {
+    if (!LogikaConfigurable.allFileExts.contains(ext)) return
+    if (LogikaFileType.extensions.contains(ext)) {
       enableEditor(editor)
       editor.putUserData(statusKey, false)
       analyze(project, editor, isSilent = true)

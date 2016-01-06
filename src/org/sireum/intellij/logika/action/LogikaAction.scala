@@ -28,11 +28,9 @@ package org.sireum.intellij.logika.action
 import com.intellij.openapi.actionSystem.{AnActionEvent, AnAction}
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import org.sireum.intellij.logika.LogikaConfigurable
 
 object LogikaAction {
-  val autoFileExts = Set(".logika", ".lgk")
-  val fileExts = Set(".sc", ".scala", ".txt") ++ autoFileExts
-
   def getFilePath(project: Project): Option[String] = {
     val fem = FileEditorManager.getInstance(project)
     fem.getSelectedFiles match {
@@ -46,7 +44,7 @@ object LogikaAction {
       case Some(path) =>
         val i = path.lastIndexOf('.')
         if (i >= 0)
-          path.substring(path.lastIndexOf('.'))
+          path.substring(path.lastIndexOf('.') + 1)
         else ""
       case _ => ""
     }
@@ -59,6 +57,6 @@ trait LogikaAction extends AnAction {
   final override def update(e: AnActionEvent): Unit = {
     val project = e.getProject
     e.getPresentation.setVisible(project != null &&
-      fileExts.contains(getFileExt(project)))
+      LogikaConfigurable.allFileExts.contains(getFileExt(project)))
   }
 }

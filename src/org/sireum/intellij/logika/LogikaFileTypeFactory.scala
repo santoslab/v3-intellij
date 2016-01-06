@@ -23,26 +23,31 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.sireum.intellij.logika;
+package org.sireum.intellij.logika
 
-import javax.swing.*;
+import javax.swing.Icon
+import com.intellij.openapi.util.IconLoader
 
-public abstract class LogikaForm {
-    protected JPanel logikaPanel;
-    protected JLabel idleLabel;
-    protected JTextField idleTextField;
-    protected JLabel timeoutLabel;
-    protected JTextField timeoutTextField;
-    protected JCheckBox checkSatCheckBox;
-    protected JCheckBox autoCheckBox;
-    protected JLabel logoLabel;
-    protected JPanel headerPanel;
-    protected JLabel titleLabel;
-    protected JLabel subtitleLabel;
-    protected JCheckBox backgroundCheckBox;
-    protected JCheckBox highlightingCheckBox;
-    protected JCheckBox underwaveCheckBox;
-    protected JTextField fileExtsTextField;
-    protected JLabel fileExtsLabel;
-    protected JCheckBox hintCheckBox;
+import com.intellij.openapi.fileTypes.{PlainTextLanguage, LanguageFileType, FileTypeConsumer, FileTypeFactory}
+
+class LogikaFileTypeFactory extends FileTypeFactory {
+  override def createFileTypes(fileTypeConsumer: FileTypeConsumer): Unit = {
+    for (e <- LogikaFileType.extensions) {
+      fileTypeConsumer.consume(LogikaFileType, e)
+    }
+  }
+}
+
+object LogikaFileType extends LanguageFileType(PlainTextLanguage.INSTANCE) {
+
+  final val extensions = Set("logika", "lgk")
+  final val icon = IconLoader.getIcon("/logika/icon/logika-0.png")
+
+  override val getDefaultExtension: String = "logika"
+
+  override val getName: String = "Logika"
+
+  override val getIcon: Icon = icon
+
+  override val getDescription: String = "Sireum Logika files"
 }

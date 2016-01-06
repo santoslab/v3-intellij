@@ -37,9 +37,10 @@ import org.sireum.util._
 import org.sireum.util.jvm.Exec
 
 object SireumApplicationComponent {
-  private val sireumHomeKey = "org.sireum"
-  private val sireumVarArgsKey = "org.sireum.vmargs"
-  private val sireumEnvVarsKey = "org.sireum.envvars"
+  private val sireumKey = "org.sireum."
+  private val sireumHomeKey = sireumKey.dropRight(1)
+  private val sireumVarArgsKey = sireumKey + "vmargs"
+  private val sireumEnvVarsKey = sireumKey + "envvars"
   private[intellij] var sireumHome: Option[File] = None
   private[intellij] var vmArgs: ISeq[String] = ivectorEmpty
   private[intellij] var envVars = ilinkedMapEmpty[String, String]

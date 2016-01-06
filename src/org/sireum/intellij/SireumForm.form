@@ -48,7 +48,7 @@
         <properties>
           <labelFor value="1ab18"/>
           <text value="&amp;VM Arguments"/>
-          <toolTipText value="VM Arguments"/>
+          <toolTipText value="VM Arguments (format: space-separated text; each text starts with a dash '-')"/>
         </properties>
       </component>
       <component id="1ab18" class="javax.swing.JTextField" binding="vmArgsTextField">

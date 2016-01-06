@@ -324,8 +324,8 @@ object LogikaCheckAction {
             val start = tag.offset
             val end = tag.offset + tag.length
             val (ta, icon) = tag match {
-              case _: ErrorTag | _: InternalError => (errorAttr, gutterErrorIcon)
-              case _: WarningTag => (warningAttr, gutterWarningIcon)
+              case _: ErrorTag | _: InternalError => (errorAttr, null)
+              case _: WarningTag => (warningAttr, null)
               case _: InfoTag => (infoAttr, gutterInfoIcon)
             }
             val rh = mm.addRangeHighlighter(start, end, 1000000, ta, HighlighterTargetArea.EXACT_RANGE)

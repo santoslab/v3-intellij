@@ -41,4 +41,5 @@ public abstract class LogikaForm {
     protected JLabel subtitleLabel;
     protected JCheckBox backgroundCheckBox;
     protected JCheckBox highlightingCheckBox;
+    protected JCheckBox underwaveCheckBox;
 }

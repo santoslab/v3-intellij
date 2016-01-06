@@ -102,7 +102,7 @@ object SireumApplicationComponent {
       case Some(d) =>
         val path = d.getAbsolutePath
         new Exec().process(Seq(s"$path/platform/java/bin/java", "-jar",
-          s"$path/jvm/target/scala-2.11/sireum.jar") ++ args, { os =>
+          s"$path/bin/sireum.jar") ++ args, { os =>
           try {
             val w = new OutputStreamWriter(os)
             val lineSep = scala.util.Properties.lineSeparator
@@ -136,7 +136,7 @@ object SireumApplicationComponent {
     if (path.trim == "") None
     else new Exec().run(0,
       (s"$path/platform/java/bin/java" +: vmArgs) ++ Seq("-jar",
-        s"$path/jvm/target/scala-2.11/sireum.jar") ++ args,
+        s"$path/bin/sireum.jar") ++ args,
       input, envVars.toSeq :+("SIREUM_HOME", path): _*) match {
       case Exec.StringResult(s, _) => Some(s)
       case _ => None

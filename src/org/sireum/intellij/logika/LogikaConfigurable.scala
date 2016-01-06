@@ -44,7 +44,7 @@ object LogikaConfigurable {
   private val checkSatKey = "org.sireum.logika.checkSat"
   private[logika] var syntaxHighlighting = true
   private[logika] var backgroundAnalysis = true
-  private[logika] var idle: Natural = 2000
+  private[logika] var idle: Natural = 1500
   private[logika] var timeout: Natural = 2000
   private[logika] var autoEnabled = false
   private[logika] var checkSat = false

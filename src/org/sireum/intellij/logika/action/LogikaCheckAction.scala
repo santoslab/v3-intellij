@@ -331,15 +331,16 @@ object LogikaCheckAction {
             val rh = mm.addRangeHighlighter(start, end, 1000000, ta, HighlighterTargetArea.EXACT_RANGE)
             rh.setErrorStripeTooltip(tag.message)
             rh.setThinErrorStripeMark(false)
-            rh.setGutterIconRenderer(new GutterIconRenderer {
-              override def getIcon = icon
+            if (icon != null)
+              rh.setGutterIconRenderer(new GutterIconRenderer {
+                override def getIcon = icon
 
-              override def getTooltipText = tag.message
+                override def getTooltipText = tag.message
 
-              override def equals(other: Any) = false
+                override def equals(other: Any) = false
 
-              override def hashCode = System.identityHashCode(this)
-            })
+                override def hashCode = System.identityHashCode(this)
+              })
             rhs :+= rh
         }
         editor.putUserData(analysisDataKey, rhs)

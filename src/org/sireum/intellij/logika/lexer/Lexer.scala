@@ -111,6 +111,7 @@ object Lexer {
     val justOpAttr = new TextAttributes(
       cs.getAttributes(TextAttributesKey.find("DEFAULT_STATIC_FIELD")).getForegroundColor,
       null, null, null, Font.PLAIN)
+    val annAttr = cs.getAttributes(TextAttributesKey.find("Scala Annotation name"))
 
     mm.addRangeHighlighter(0, editor.getDocument.getText.length,
       800000, plainAttr, HighlighterTargetArea.EXACT_RANGE)
@@ -184,6 +185,12 @@ object Lexer {
               add(tokens(i + 1), justOpAttr)
               i += 1
             } else add(token, justOpAttr)
+          } else if (text == "@") {
+            add(token, annAttr)
+            if (peek(i + 1, _.getType == ID)) {
+              add(tokens(i + 1), annAttr)
+              i += 1
+            }
           }
       }
       i += 1

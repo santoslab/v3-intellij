@@ -29,13 +29,19 @@ import com.intellij.openapi.components.ProjectComponent
 import com.intellij.openapi.fileEditor.{FileEditorManagerEvent, FileEditorManagerListener, FileEditorManager}
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.wm.{ToolWindowAnchor, ToolWindowManager}
 import org.sireum.intellij.logika.action.LogikaCheckAction
 
 class SireumProjectComponent(project: Project) extends ProjectComponent {
-  override def projectClosed(): Unit = {}
+  override def projectClosed(): Unit = {
+    SireumToolWindowFactory.removeToolWindow(project)
+  }
 
   override def projectOpened(): Unit = {
-    val l = project.getMessageBus.connect(project).
+    val tw = ToolWindowManager.getInstance(project).registerToolWindow("Sireum", false, ToolWindowAnchor.BOTTOM)
+    SireumToolWindowFactory.createToolWindowContent(project, tw)
+
+    project.getMessageBus.connect(project).
       subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener {
         override def fileClosed(source: FileEditorManager, file: VirtualFile): Unit = {}
 

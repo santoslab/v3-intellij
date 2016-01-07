@@ -42,9 +42,10 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util._
 import com.intellij.openapi.wm.StatusBarWidget.{IconPresentation, WidgetPresentation, PlatformType}
+import com.intellij.openapi.wm.impl.ToolWindowImpl
 import com.intellij.openapi.wm.{StatusBar, StatusBarWidget, WindowManager}
 import com.intellij.util.Consumer
-import org.sireum.intellij.SireumApplicationComponent
+import org.sireum.intellij.{SireumToolWindowFactory, SireumApplicationComponent}
 import org.sireum.intellij.logika.{LogikaFileType, LogikaConfigurable}
 import org.sireum.intellij.logika.lexer.Lexer
 import org.sireum.logika.message._
@@ -66,6 +67,7 @@ object LogikaCheckAction {
   val gutterErrorIcon = IconLoader.getIcon("/logika/icon/logika-gutter-error.png")
   val gutterWarningIcon = IconLoader.getIcon("/logika/icon/logika-gutter-warning.png")
   val gutterInfoIcon = IconLoader.getIcon("/logika/icon/logika-gutter-info.png")
+  val gutterHintIcon = IconLoader.getIcon("/logika/icon/logika-gutter-hint.png")
   val verifiedInfoIcon = IconLoader.getIcon("/logika/icon/logika-verified-info.png")
   val queue = new LinkedBlockingQueue[String]()
   val editorMap = mmapEmpty[String, (Project, Editor)]
@@ -234,7 +236,7 @@ object LogikaCheckAction {
         val point = e.getMouseEvent.getPoint
         val pos = editor.xyToLogicalPosition(point)
         val offset = editor.logicalPositionToOffset(pos)
-        for (rh <- rhs)
+        for (rh <- rhs if rh.getErrorStripeTooltip != null)
           if (rh.getStartOffset <= offset && offset <= rh.getEndOffset) {
             component.setToolTipText(rh.getErrorStripeTooltip.toString)
             return
@@ -246,34 +248,45 @@ object LogikaCheckAction {
     })
   }
 
-  def notifyHelper(project: Project, editor: Editor,
-                   isSilent: Boolean, tags: ISeq[Tag]): Unit = {
-    def notify(n: Notification): Unit =
-      new Thread() {
-        override def run(): Unit = {
-          Notifications.Bus.notify(n, project)
-          Thread.sleep(5000)
-          ApplicationManager.getApplication.invokeLater(() => n.expire())
-        }
-      }.start()
+  def notify(n: Notification, project: Project): Unit =
+    new Thread() {
+      override def run(): Unit = {
+        Notifications.Bus.notify(n, project)
+        Thread.sleep(5000)
+        ApplicationManager.getApplication.invokeLater(() => n.expire())
+      }
+    }.start()
 
-    val status = editor.getUserData(statusKey)
+  def notifyHelper(projectOpt: Option[Project], editorOpt: Option[Editor],
+                   isSilent: Boolean, tags: ISeq[Tag]): Unit = {
+
+    val project = projectOpt.orNull
+    val status = editorOpt.exists(_.getUserData(statusKey))
     val lineSep = scala.util.Properties.lineSeparator
+    val ienlTags = tags.filter(_.isInstanceOf[InternalErrorTag])
+    if (ienlTags.nonEmpty) {
+      if (!isSilent || status)
+        notify(new Notification(
+          "Sireum Logika", "Logika Internal Error",
+          ienlTags.map(_.asInstanceOf[MessageTag].message).mkString(lineSep),
+          NotificationType.ERROR), project)
+      editorOpt.foreach(_.putUserData(statusKey, false))
+    }
     val enlTags = tags.filter(_.isInstanceOf[ErrorTag])
     if (enlTags.nonEmpty) {
       if (!isSilent || status)
         notify(new Notification(
           "Sireum Logika", "Logika Error",
           enlTags.map(_.asInstanceOf[MessageTag].message).mkString(lineSep),
-          NotificationType.ERROR, null))
-      editor.putUserData(statusKey, false)
+          NotificationType.ERROR), project)
+      editorOpt.foreach(_.putUserData(statusKey, false))
     }
     val wnlTags = tags.filter(_.isInstanceOf[WarningTag])
     if (wnlTags.nonEmpty) {
       notify(new Notification(
         "Sireum Logika", "Logika Warning",
         wnlTags.map(_.asInstanceOf[MessageTag].message).mkString(lineSep),
-        NotificationType.WARNING, null))
+        NotificationType.WARNING, null), project)
     }
     val inlTags = tags.filter(_.isInstanceOf[InfoTag])
     if (inlTags.nonEmpty) {
@@ -286,19 +299,31 @@ object LogikaCheckAction {
         notify(new Notification("Sireum Logika", title, msg,
           NotificationType.INFORMATION, null) {
           override def getIcon: Icon = icon
-        })
+        }, project)
       if (isVerified)
-        editor.putUserData(statusKey, true)
+        editorOpt.foreach(_.putUserData(statusKey, true))
     }
   }
 
   def processResult(r: Result): Unit =
     ApplicationManager.getApplication.invokeLater(() => analysisDataKey.synchronized {
       val tags = r.tags
+      if (r.requestId == "") {
+        editorMap.synchronized {
+          editorMap.clear()
+        }
+        notifyHelper(None, None, isSilent = false, tags)
+        return
+      }
       val (project, editor) = editorMap.synchronized {
-        val pe = editorMap(r.requestId)
-        editorMap -= r.requestId
-        pe
+        editorMap.get(r.requestId) match {
+          case Some(pe) =>
+            editorMap -= r.requestId
+            pe
+          case _ =>
+            notifyHelper(None, None, isSilent = false, tags)
+            return
+        }
       }
       val mm = editor.getMarkupModel
       val rhs = editor.getUserData(analysisDataKey)
@@ -306,8 +331,9 @@ object LogikaCheckAction {
         for (rh <- rhs)
           mm.removeHighlighter(rh)
       editor.putUserData(analysisDataKey, null)
-      val (lTags, nlTags) = tags.partition(_.isInstanceOf[UriTag with LocationInfoTag with MessageTag])
-      notifyHelper(project, editor, r.isSilent, nlTags)
+      val (lTags, nlTags) = tags.partition(
+        _.isInstanceOf[UriTag with LocationInfoTag with MessageTag with KindTag with SeverityTag])
+      notifyHelper(Some(project), Some(editor), r.isSilent, nlTags)
       if (lTags.isEmpty) return
       if (!editor.isDisposed) {
         val mm = editor.getMarkupModel
@@ -320,26 +346,43 @@ object LogikaCheckAction {
         val warningAttr = cs.getAttributes(TextAttributesKey.find("WARNING_ATTRIBUTES"))
         val infoAttr = cs.getAttributes(TextAttributesKey.find("TYPO"))
         for (lTag <- lTags) (lTag: @unchecked) match {
-          case tag: UriTag with LocationInfoTag with MessageTag =>
+          case tag: UriTag with LocationInfoTag with MessageTag with KindTag with SeverityTag =>
             val start = tag.offset
             val end = tag.offset + tag.length
             val (ta, icon) = tag match {
-              case _: ErrorTag | _: InternalError => (errorAttr, null)
+              case _: InfoTag =>
+                if (tag.kind == "hint") (null, gutterHintIcon)
+                else (infoAttr, gutterInfoIcon)
               case _: WarningTag => (warningAttr, null)
-              case _: InfoTag => (infoAttr, gutterInfoIcon)
+              case _: ErrorTag | _: InternalError => (errorAttr, null)
             }
             val rh = mm.addRangeHighlighter(start, end, 1000000, ta, HighlighterTargetArea.EXACT_RANGE)
-            rh.setErrorStripeTooltip(tag.message)
-            rh.setThinErrorStripeMark(false)
+            if (ta != null) {
+              rh.setErrorStripeTooltip(tag.message)
+              rh.setThinErrorStripeMark(false)
+            }
             if (icon != null)
               rh.setGutterIconRenderer(new GutterIconRenderer {
                 override def getIcon = icon
 
-                override def getTooltipText = tag.message
+                override def getTooltipText =
+                  if (tag.kind == "hint") "Click to show some hints"
+                  else tag.message
 
                 override def equals(other: Any) = false
 
                 override def hashCode = System.identityHashCode(this)
+
+                override def getClickAction =
+                  if (tag.kind == "hint")
+                    (e: AnActionEvent) =>
+                      Option(SireumToolWindowFactory.windows.get(project)).
+                        foreach(f => {
+                          val tw = f.toolWindow.asInstanceOf[ToolWindowImpl]
+                          tw.activate(
+                            () => f.logika.logikaTextArea.setText(tag.message))
+                        })
+                  else null
               })
             rhs :+= rh
         }

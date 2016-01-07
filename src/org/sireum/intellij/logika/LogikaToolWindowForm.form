@@ -19,7 +19,7 @@
             <constraints/>
             <properties>
               <editable value="false"/>
-              <font name="Courier New" size="16"/>
+              <font name="Source Code Pro" size="16"/>
             </properties>
           </component>
         </children>

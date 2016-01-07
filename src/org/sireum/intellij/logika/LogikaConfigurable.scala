@@ -155,7 +155,6 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
 
     logoLabel.setIcon(logo)
 
-    LogikaConfigurable.loadConfiguration()
     reset()
 
     fgColor = idleLabel.getForeground

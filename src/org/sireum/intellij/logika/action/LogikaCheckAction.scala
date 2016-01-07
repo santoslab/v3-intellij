@@ -83,7 +83,6 @@ object LogikaCheckAction {
 
   def init(p: Project): Unit = {
     if (!processInit) {
-      LogikaConfigurable.loadConfiguration()
       processInit =
         SireumApplicationComponent.getSireumProcess(p,
           queue, { s =>
@@ -285,7 +284,7 @@ object LogikaCheckAction {
       editorOpt.foreach(_.putUserData(statusKey, false))
     }
     val wnlTags = tags.filter(_.isInstanceOf[WarningTag])
-    if (wnlTags.nonEmpty) {
+    if (wnlTags.nonEmpty && !isSilent) {
       notify(new Notification(
         "Sireum Logika", "Logika Warning",
         wnlTags.map(_.asInstanceOf[MessageTag].message).mkString(lineSep),

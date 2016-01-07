@@ -33,6 +33,7 @@ import com.intellij.openapi.components._
 import com.intellij.openapi.fileChooser._
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
+import org.sireum.intellij.logika.LogikaConfigurable
 import org.sireum.util._
 import org.sireum.util.jvm.Exec
 
@@ -201,6 +202,7 @@ class SireumApplicationComponent extends ApplicationComponent {
 
   override def initComponent(): Unit = {
     SireumApplicationComponent.loadConfiguration()
+    LogikaConfigurable.loadConfiguration()
   }
 
   override def disposeComponent(): Unit = {

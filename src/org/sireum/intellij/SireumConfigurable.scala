@@ -122,6 +122,7 @@ final class SireumConfigurable extends SireumForm with Configurable {
     })
 
     updateEnvVars(envVarsString)
+    updateVmArgs(vmArgsString)
 
     sireumPanel
   }

@@ -95,8 +95,9 @@ object LogikaCheckAction {
       if (!processInit) return
       val statusBar = WindowManager.getInstance().getStatusBar(p)
       var frame = 0
-      val statusIdle = "Sireum Logika is idle"
-      val statusWorking = "Sireum Logika is working"
+      val statusIdle = "Sireum Logika is idle."
+      val statusWaiting = "Sireum Logika is waiting to work."
+      val statusWorking = "Sireum Logika is working."
       var statusTooltip = statusIdle
       val statusBarWidget = new StatusBarWidget {
         override def ID(): String = "Sireum Logika"
@@ -126,9 +127,11 @@ object LogikaCheckAction {
         override def run(): Unit = {
           val defaultFrame = icons.length / 2 + 1
           while (!terminated) {
-            if (editorMap.nonEmpty) {
+            if (editorMap.nonEmpty || request.nonEmpty) {
               frame = (frame + 1) % icons.length
-              statusTooltip = statusWorking
+              statusTooltip =
+                if (editorMap.nonEmpty) statusWorking
+                else statusWaiting
               statusBar.updateWidget(statusBarWidget.ID())
             } else {
               val f = frame

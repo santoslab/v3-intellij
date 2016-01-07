@@ -41,7 +41,7 @@ class LogikaFileTypeFactory extends FileTypeFactory {
 object LogikaFileType extends LanguageFileType(PlainTextLanguage.INSTANCE) {
 
   final val extensions = Set("logika", "lgk")
-  final val icon = IconLoader.getIcon("/logika/icon/logika-0.png")
+  final val icon = IconLoader.getIcon("/logika/icon/logika-4.png")
 
   override val getDefaultExtension: String = "logika"
 

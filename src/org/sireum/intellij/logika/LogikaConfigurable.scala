@@ -54,7 +54,7 @@ object LogikaConfigurable {
   private[logika] var timeout: Natural = 2000
   private[logika] var autoEnabled = false
   private[logika] var checkSat = false
-  private[logika] var fileExts: ISeq[String] = ivector("txt", "scala", "sc")
+  private[logika] var fileExts: ISeq[String] = ivector("sc")
   private[logika] var hint = false
 
   def loadConfiguration(): Unit = {
@@ -101,6 +101,7 @@ object LogikaConfigurable {
       val ext = e.trim
       if (ext.nonEmpty && ext.forall(_.isLetterOrDigit))
         r :+= ext
+      else return None
     }
     Some(r)
   }

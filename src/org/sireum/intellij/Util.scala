@@ -23,16 +23,28 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.sireum.intellij.logika.action
+package org.sireum.intellij
 
-import org.sireum.intellij.Util
-import com.intellij.openapi.actionSystem.{AnActionEvent, AnAction}
-import org.sireum.intellij.logika.LogikaConfigurable
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.Project
 
-trait LogikaAction extends AnAction {
-  final override def update(e: AnActionEvent): Unit = {
-    val project = e.getProject
-    e.getPresentation.setVisible(project != null &&
-      LogikaConfigurable.allFileExts.contains(Util.getFileExt(project)))
+object Util {
+  def getFilePath(project: Project): Option[String] = {
+    val fem = FileEditorManager.getInstance(project)
+    fem.getSelectedFiles match {
+      case Array(f, _*) => Some(f.getCanonicalPath)
+      case _ => None
+    }
+  }
+
+  def getFileExt(project: Project): String = {
+    getFilePath(project) match {
+      case Some(path) =>
+        val i = path.lastIndexOf('.')
+        if (i >= 0)
+          path.substring(path.lastIndexOf('.') + 1)
+        else ""
+      case _ => ""
+    }
   }
 }

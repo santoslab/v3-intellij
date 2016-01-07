@@ -38,20 +38,25 @@ class SireumProjectComponent(project: Project) extends ProjectComponent {
   }
 
   override def projectOpened(): Unit = {
-    val tw = ToolWindowManager.getInstance(project).registerToolWindow("Sireum", false, ToolWindowAnchor.BOTTOM)
+    val tw = ToolWindowManager.getInstance(project).
+      registerToolWindow("Sireum", false, ToolWindowAnchor.RIGHT)
     SireumToolWindowFactory.createToolWindowContent(project, tw)
 
     project.getMessageBus.connect(project).
-      subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener {
-        override def fileClosed(source: FileEditorManager, file: VirtualFile): Unit = {}
+      subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER,
+        new FileEditorManagerListener {
+          override def fileClosed(source: FileEditorManager,
+                                  file: VirtualFile): Unit = {}
 
-        override def fileOpened(source: FileEditorManager, file: VirtualFile): Unit = {
-          val editor = source.getSelectedTextEditor
-          LogikaCheckAction.editorOpened(project, editor)
-        }
+          override def fileOpened(source: FileEditorManager,
+                                  file: VirtualFile): Unit = {
+            val editor = source.getSelectedTextEditor
+            LogikaCheckAction.editorOpened(project, editor)
+          }
 
-        override def selectionChanged(event: FileEditorManagerEvent): Unit = {}
-      })
+          override def
+          selectionChanged(event: FileEditorManagerEvent): Unit = {}
+        })
   }
 
   override def initComponent(): Unit = {}

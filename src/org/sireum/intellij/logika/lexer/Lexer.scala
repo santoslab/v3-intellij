@@ -28,11 +28,13 @@ package org.sireum.intellij.logika.lexer
 import java.awt.Font
 import java.io.StringReader
 
-import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.{DefaultLanguageHighlighterColors, Editor}
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.editor.markup.{HighlighterTargetArea, TextAttributes, RangeHighlighter}
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import org.antlr.v4.runtime.{ANTLRInputStream, Token}
+import org.sireum.intellij.Util
 import org.sireum.util._
 
 object Lexer {
@@ -69,7 +71,7 @@ object Lexer {
     extends TextAttributes(null, null, null, null, Font.ITALIC)
     with LogikaHighlightingTextAttributes
 
-  def addSyntaxHighlighter(editor: Editor, isProgramming: Boolean): Unit = {
+  def addSyntaxHighlighter(project: Project, editor: Editor): Unit = {
     val mm = editor.getMarkupModel
     var rhs = ivectorEmpty[RangeHighlighter]
 
@@ -88,33 +90,36 @@ object Lexer {
     val inputStream = new ANTLRInputStream(sr)
     val lexer = new Antlr4LogikaLexer(inputStream)
 
-    import Antlr4LogikaLexer._
-
     val tokens: CSeq[Token] = {
       import scala.collection.JavaConversions._
       lexer.getAllTokens
     }
     val size = tokens.size
-
+    val isProgramming = tokens.exists(_.getText == "import")
     def peek(i: Int, f: Token => Boolean): Boolean =
       if (i < size) f(tokens(i)) else false
 
     val cs = editor.getColorsScheme
-    val plainAttr = new TextAttributes(cs.getDefaultForeground, null, null, null, Font.PLAIN)
-    val stringAttr = cs.getAttributes(TextAttributesKey.find("Scala String"))
-    val keywordAttr = cs.getAttributes(TextAttributesKey.find("Scala Keyword"))
-    val lineCommentAttr = cs.getAttributes(TextAttributesKey.find("Scala Line comment"))
-    val blockCommentAttr = cs.getAttributes(TextAttributesKey.find("Scala Block comment"))
-    val logikaAttr = new TextAttributes(lineCommentAttr.getForegroundColor, null, null, null, Font.PLAIN)
-    val typeAttr = cs.getAttributes(TextAttributesKey.find("Scala Type Alias"))
-    val constantAttr = cs.getAttributes(TextAttributesKey.find("Scala Number"))
-    val justOpAttr = new TextAttributes(
-      cs.getAttributes(TextAttributesKey.find("DEFAULT_STATIC_FIELD")).getForegroundColor,
-      null, null, null, Font.PLAIN)
-    val annAttr = cs.getAttributes(TextAttributesKey.find("Scala Annotation name"))
 
-    mm.addRangeHighlighter(0, editor.getDocument.getText.length,
-      800000, plainAttr, HighlighterTargetArea.EXACT_RANGE)
+    import DefaultLanguageHighlighterColors._
+    val plainAttr = new TextAttributes(cs.getDefaultForeground, null, null, null, Font.PLAIN)
+    val stringAttr = cs.getAttributes(STRING)
+    val keywordAttr = cs.getAttributes(KEYWORD)
+    val lineCommentAttr = cs.getAttributes(LINE_COMMENT)
+    val blockCommentAttr = cs.getAttributes(BLOCK_COMMENT)
+    val logikaAttr = new TextAttributes(lineCommentAttr.getForegroundColor, null, null, null, Font.PLAIN)
+    val typeAttr = cs.getAttributes(CLASS_REFERENCE)
+    val constantAttr = cs.getAttributes(NUMBER)
+    val justOpAttr = cs.getAttributes(CONSTANT)
+    val annAttr = cs.getAttributes(METADATA)
+
+    val ext = Util.getFileExt(project)
+    if (ext == "scala" || ext == "sc") {
+      mm.addRangeHighlighter(0, editor.getDocument.getText.length,
+        800000, plainAttr, HighlighterTargetArea.EXACT_RANGE)
+    }
+
+    import Antlr4LogikaLexer._
 
     var i = 0
     while (i < size) {
@@ -129,7 +134,7 @@ object Lexer {
           add(token, stringAttr)
         case COMMENT =>
           add(token, blockCommentAttr)
-        case LINE_COMMENT =>
+        case Antlr4LogikaLexer.LINE_COMMENT =>
           add(token, lineCommentAttr)
         case _ =>
           val text = token.getText

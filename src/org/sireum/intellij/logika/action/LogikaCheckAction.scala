@@ -45,12 +45,11 @@ import com.intellij.openapi.wm.StatusBarWidget.{IconPresentation, WidgetPresenta
 import com.intellij.openapi.wm.impl.ToolWindowImpl
 import com.intellij.openapi.wm.{StatusBar, StatusBarWidget, WindowManager}
 import com.intellij.util.Consumer
-import org.sireum.intellij.{SireumToolWindowFactory, SireumApplicationComponent}
+import org.sireum.intellij.{Util, SireumToolWindowFactory, SireumApplicationComponent}
 import org.sireum.intellij.logika.{LogikaFileType, LogikaConfigurable}
 import org.sireum.intellij.logika.lexer.Lexer
 import org.sireum.logika.message._
 import org.sireum.util._
-import LogikaAction._
 
 object LogikaCheckAction {
 
@@ -106,9 +105,15 @@ object LogikaCheckAction {
 
         override def getPresentation(`type`: PlatformType): WidgetPresentation =
           new IconPresentation {
-            override def getClickConsumer: Consumer[MouseEvent] = null
+            override def getClickConsumer: Consumer[MouseEvent] = (e) =>
+              editorMap.synchronized {
+                editorMap.clear()
+              }
 
-            override def getTooltipText: String = statusTooltip
+            override def getTooltipText: String =
+              if (editorMap.nonEmpty)
+                s"$statusTooltip (click to detach background jobs)"
+              else s"$statusTooltip"
 
             override def getIcon: Icon = icons(frame)
           }
@@ -160,19 +165,14 @@ object LogikaCheckAction {
 
   def analyze(project: Project, editor: Editor, isSilent: Boolean): Unit = {
     if (!isEnabled(editor)) return
-    val isProgramming =
-      getFileExt(project) match {
-        case ".scala" | ".sc" => true
-        case _ => false
-      }
     if (LogikaConfigurable.syntaxHighlighting)
       ApplicationManager.getApplication.invokeLater(
-        (() => Lexer.addSyntaxHighlighter(editor, isProgramming)): Runnable,
+        (() => Lexer.addSyntaxHighlighter(project, editor)): Runnable,
         ((_: Any) => editor.isDisposed): Condition[Any])
     if (!LogikaConfigurable.backgroundAnalysis) return
     init(project)
     val input = editor.getDocument.getText
-    val proofs = ivector(ProofFile(Some(getFilePath(project).get), input))
+    val proofs = ivector(ProofFile(Some(Util.getFilePath(project).get), input))
     val (t, requestId) = {
       val t = System.currentTimeMillis
       val id = t.toString
@@ -210,7 +210,7 @@ object LogikaCheckAction {
   }
 
   def editorOpened(project: Project, editor: Editor): Unit = {
-    val ext = getFileExt(project)
+    val ext = Util.getFileExt(project)
     if (!LogikaConfigurable.allFileExts.contains(ext)) return
     if (LogikaFileType.extensions.contains(ext)) {
       enableEditor(editor)

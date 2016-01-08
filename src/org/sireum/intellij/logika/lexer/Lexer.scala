@@ -29,7 +29,6 @@ import java.awt.Font
 import java.io.StringReader
 
 import com.intellij.openapi.editor.{DefaultLanguageHighlighterColors, Editor}
-import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.editor.markup.{HighlighterTargetArea, TextAttributes, RangeHighlighter}
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
@@ -39,13 +38,13 @@ import org.sireum.util._
 
 object Lexer {
   final val syntaxHighlightingDataKey = new Key[ISeq[RangeHighlighter]]("Logika Highlighting Data")
-  final val propJusts = Set("assume", "premise", "andi", "^i", "ande1",
+  final val propJusts = Set("premise", "andi", "^i", "ande1",
     "^e1", "ande2", "^e2", "ori1", "Vi1", "ori2", "Vi2", "ore", "Ve",
     "impliesi", "impliese", "noti", "negi", "note", "nege", "bottome",
     "falsee", "Pbc")
   final val predJusts = Set("foralli", "alli", "Ai", "foralle", "alle", "Ae",
     "existsi", "somei", "Ei", "existse", "somee", "Ee")
-  final val progJusts = Set("subst1", "subst2", "algebra", "auto", "invariant")
+  final val progJusts = Set("subst1", "subst2", "algebra", "auto")
   final val propOps = Set("not", "and", "^", "or", "V", "implies")
   final val predOps = Set("forall", "all", "A", "exists", "some", "E")
   final val progOps = Set("*", "/", "%", "+", "-", "+:", ":+", "<", "<=",
@@ -63,7 +62,8 @@ object Lexer {
     "if", "implicit", "import", "lazy", "macro", "match", "new",
     "null", "object", "override", "package", "private",
     "protected", "return", "sealed", "super", "this", "throw",
-    "trait", "try", "type", "val", "var", "while", "with", "yield")
+    "trait", "try", "type", "val", "var", "while", "with", "yield",
+    "pre", "requires", "modifies", "post", "ensures", "fact")
 
   sealed trait LogikaHighlightingTextAttributes
 
@@ -196,6 +196,13 @@ object Lexer {
               add(tokens(i + 1), annAttr)
               i += 1
             }
+          } else if (text == "invariant") {
+            if (peek(i - 1, _.getText == "{"))
+              add(token, keywordAttr)
+            else add(token, justOpAttr)
+          } else if (text == "assume") {
+            if (!peek(i + 1, _.getText == "("))
+              add(token, justOpAttr)
           }
       }
       i += 1

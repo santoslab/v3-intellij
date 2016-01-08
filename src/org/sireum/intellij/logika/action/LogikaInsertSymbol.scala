@@ -39,7 +39,12 @@ trait LogikaInsertSymbol extends LogikaAction {
     if (editor == null) return
     val document = editor.getDocument
     WriteCommandAction.runWriteCommandAction(project,
-      (() => document.insertString(editor.getCaretModel.getOffset, symbol)): Runnable)
+      (() => {
+        val cm = editor.getCaretModel
+        val offset = cm.getOffset
+        document.insertString(offset, symbol)
+        cm.moveToOffset(offset + 1)
+      }): Runnable)
   }
 }
 

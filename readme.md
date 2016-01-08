@@ -8,12 +8,12 @@ into IntelliJ 15.
 
 ## Setup, Build, and Install
 
-1. Clone both [Sireum v3 repository](https://github.com/santoslab/sireum-v3)
+1. Clone both [Sireum v3 repository](https://github.com/sireum/v3)
    and this repository:
 
    ```bash
-   git clone git@github.com:santoslab/sireum-v3.git
-   git clone git@github.com:santoslab/sireum-v3-intellij.git
+   git clone git@github.com:sireum/v3.git sireum-v3
+   git clone git@github.com:sireum/v3-intellij.git sireum-v3-intellij
    ```
 
 2. Create a symlink `sireum-v3` to point to the Sireum v3 local git repo inside `sireum-v3-intellij`:
@@ -34,6 +34,3 @@ into IntelliJ 15.
    IntelliJ and select "Prepare Plugin Module 'sireum-v3-intellij' For Deployment".
    
    This produces a plugin zip file that you can install in your IntelliJ instance.
-
-
-

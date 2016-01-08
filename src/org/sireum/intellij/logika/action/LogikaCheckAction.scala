@@ -40,6 +40,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.markup._
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util._
 import com.intellij.openapi.wm.StatusBarWidget.{IconPresentation, WidgetPresentation, PlatformType}
 import com.intellij.openapi.wm.impl.ToolWindowImpl
@@ -74,7 +75,7 @@ object LogikaCheckAction {
   val analysisDataKey = new Key[ISeq[RangeHighlighter]]("Logika Analysis Data")
   val statusKey = new Key[Boolean]("Logika Analysis Status")
   var request: Option[Request] = None
-  var processInit = false
+  var processInit: Option[scala.sys.process.Process] = None
   var terminated = false
 
   final case class Request(time: Long, requestId: String,
@@ -82,7 +83,7 @@ object LogikaCheckAction {
                            msgGen: () => String)
 
   def init(p: Project): Unit = {
-    if (!processInit) {
+    if (processInit.isEmpty) {
       processInit =
         SireumApplicationComponent.getSireumProcess(p,
           queue, { s =>
@@ -91,14 +92,15 @@ object LogikaCheckAction {
                 case r: Result => processResult(r)
               }
           }, "logika", "--server")
-      if (!processInit) return
+      if (processInit.isEmpty) return
       val statusBar = WindowManager.getInstance().getStatusBar(p)
       var frame = 0
-      val statusIdle = "Sireum Logika is idle."
-      val statusWaiting = "Sireum Logika is waiting to work."
-      val statusWorking = "Sireum Logika is working."
+      val statusIdle = "Sireum Logika is idle"
+      val statusWaiting = "Sireum Logika is waiting to work"
+      val statusWorking = "Sireum Logika is working"
       var statusTooltip = statusIdle
-      val statusBarWidget = new StatusBarWidget {
+      lazy val statusBarWidget: StatusBarWidget = new StatusBarWidget {
+
         override def ID(): String = "Sireum Logika"
 
         override def install(statusBar: StatusBar): Unit = {}
@@ -106,14 +108,21 @@ object LogikaCheckAction {
         override def getPresentation(`type`: PlatformType): WidgetPresentation =
           new IconPresentation {
             override def getClickConsumer: Consumer[MouseEvent] = (e) =>
-              editorMap.synchronized {
-                editorMap.clear()
-              }
+              if (Messages.showYesNoDialog(
+                p, "Shutdown Sireum Logika background server?",
+                "Sireum Logika", null) == Messages.YES)
+                editorMap.synchronized {
+                  this.synchronized {
+                    request = None
+                    editorMap.clear()
+                    processInit.foreach(_.destroy())
+                    processInit = None
+                    statusBar.removeWidget(statusBarWidget.ID())
+                  }
+                }
 
             override def getTooltipText: String =
-              if (editorMap.nonEmpty)
-                s"$statusTooltip (click to detach background jobs)"
-              else s"$statusTooltip"
+              statusTooltip + " (click to shutdown)."
 
             override def getIcon: Icon = icons(frame)
           }

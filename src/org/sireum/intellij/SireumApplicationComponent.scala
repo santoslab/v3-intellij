@@ -99,35 +99,35 @@ object SireumApplicationComponent {
   def getSireumProcess(project: Project,
                        queue: BlockingQueue[String],
                        processOutput: String => Unit,
-                       args: String*): Boolean =
+                       args: String*): Option[scala.sys.process.Process] =
     getSireumHome(project) match {
       case Some(d) =>
         val path = d.getAbsolutePath
-        new Exec().process(Seq(s"$path/platform/java/bin/java", "-jar",
-          s"$path/bin/sireum.jar") ++ args, { os =>
-          try {
-            val w = new OutputStreamWriter(os)
-            val lineSep = scala.util.Properties.lineSeparator
-            while (!terminated) {
-              val m = queue.take()
-              w.write(m)
-              w.write(lineSep)
-              w.flush()
-            }
-          } finally os.close()
-        }, { is =>
-          try {
-            val r = new BufferedReader(new InputStreamReader(is))
-            while (!terminated) {
-              val line = r.readLine()
-              if (line != null) {
-                processOutput(line)
+        Some(new Exec().process(
+          Seq(s"$path/platform/java/bin/java", "-jar",
+            s"$path/bin/sireum.jar") ++ args, { os =>
+            try {
+              val w = new OutputStreamWriter(os)
+              val lineSep = scala.util.Properties.lineSeparator
+              while (!terminated) {
+                val m = queue.take()
+                w.write(m)
+                w.write(lineSep)
+                w.flush()
               }
-            }
-          } finally is.close()
-        }, ("SIREUM_HOME", path))
-        true
-      case _ => false
+            } finally os.close()
+          }, { is =>
+            try {
+              val r = new BufferedReader(new InputStreamReader(is))
+              while (!terminated) {
+                val line = r.readLine()
+                if (line != null) {
+                  processOutput(line)
+                }
+              }
+            } finally is.close()
+          }, ("SIREUM_HOME", path)))
+      case _ => None
     }
 
   private def runSireum(path: String,

@@ -216,19 +216,9 @@ object LogikaCheckAction {
     }
   }
 
-  def enableEditor(editor: Editor): Unit = {
+  def enableEditor(project: Project, editor: Editor): Unit = {
+    if (editor.getUserData(logikaKey) != null) return
     editor.putUserData(logikaKey, EditorEnabled)
-  }
-
-  def editorOpened(project: Project, editor: Editor): Unit = {
-    val ext = Util.getFileExt(project)
-    if (!LogikaConfigurable.allFileExts.contains(ext)) return
-    if (LogikaFileType.extensions.contains(ext)) {
-      enableEditor(editor)
-      editor.putUserData(statusKey, false)
-      analyze(project, editor, isSilent = true)
-    }
-
     editor.getDocument.addDocumentListener(new DocumentListener {
       override def documentChanged(event: DocumentEvent): Unit = {
         if (LogikaConfigurable.backgroundAnalysis)
@@ -257,6 +247,16 @@ object LogikaCheckAction {
 
       override def mouseDragged(e: EditorMouseEvent): Unit = {}
     })
+  }
+
+  def editorOpened(project: Project, editor: Editor): Unit = {
+    val ext = Util.getFileExt(project)
+    if (!LogikaConfigurable.allFileExts.contains(ext)) return
+    if (LogikaFileType.extensions.contains(ext)) {
+      enableEditor(project, editor)
+      editor.putUserData(statusKey, false)
+      analyze(project, editor, isSilent = true)
+    }
   }
 
   def notify(n: Notification, project: Project): Unit =
@@ -423,8 +423,13 @@ private class LogikaCheckAction extends LogikaAction {
     val editor = FileEditorManager.
       getInstance(project).getSelectedTextEditor
     if (editor == null) return
-    enableEditor(editor)
+    enableEditor(project, editor)
     analyze(project, editor, isSilent = false)
-    e.getPresentation.setEnabled(true)
+  }
+
+  final override def update(e: AnActionEvent): Unit = {
+    val project = e.getProject
+    e.getPresentation.setEnabledAndVisible(project != null &&
+      LogikaConfigurable.allFileExts.contains(Util.getFileExt(project)))
   }
 }

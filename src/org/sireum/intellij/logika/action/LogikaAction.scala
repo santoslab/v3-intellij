@@ -25,14 +25,6 @@
 
 package org.sireum.intellij.logika.action
 
-import org.sireum.intellij.Util
-import com.intellij.openapi.actionSystem.{AnActionEvent, AnAction}
-import org.sireum.intellij.logika.LogikaConfigurable
+import com.intellij.openapi.actionSystem.AnAction
 
-trait LogikaAction extends AnAction {
-  final override def update(e: AnActionEvent): Unit = {
-    val project = e.getProject
-    e.getPresentation.setVisible(project != null &&
-      LogikaConfigurable.allFileExts.contains(Util.getFileExt(project)))
-  }
-}
+trait LogikaAction extends AnAction

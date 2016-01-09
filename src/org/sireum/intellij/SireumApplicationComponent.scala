@@ -37,37 +37,77 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import org.sireum.intellij.logika.LogikaConfigurable
 import org.sireum.util._
-import org.sireum.util.jvm.Exec
+import org.sireum.util.jvm.{FileUtil, Exec}
 
 object SireumApplicationComponent {
-  lazy val version = PluginManager.getPlugin(PluginId.getId("org.sireum.intellij")).getVersion
   private val sireumKey = "org.sireum."
   private val sireumHomeKey = sireumKey.dropRight(1)
   private val sireumVarArgsKey = sireumKey + "vmargs"
   private val sireumEnvVarsKey = sireumKey + "envvars"
-  private[intellij] var sireumHome: Option[File] = None
+  private val sireumVersionKey = sireumKey + "version"
+  private val sireumPluginVersionKey = sireumKey + "plugin.version"
+  private lazy val currentPluginVersion =
+    PluginManager.getPlugin(
+      PluginId.getId("org.sireum.intellij")).getVersion
+  private[intellij] var sireumHomeOpt: Option[File] = None
   private[intellij] var vmArgs: ISeq[String] = ivectorEmpty
   private[intellij] var envVars = ilinkedMapEmpty[String, String]
+  private[intellij] var sireumVersion: String = ""
+  private[intellij] var pluginVersion: String = ""
 
   private var terminated: Boolean = false
 
   final def getSireumHome(project: Project = null): Option[File] = {
-    val r =
-      if (sireumHome.nonEmpty) sireumHome
-      else {
-        val env = System.getenv("SIREUM_HOME")
-        sireumHome = checkSireumDir(env)
-        if (sireumHome.isEmpty) {
-          browseSireumHome(project).foreach(p =>
-            sireumHome = checkSireumDir(p))
-        }
-        sireumHome
+    if (sireumHomeOpt.isEmpty) {
+      val env = System.getenv("SIREUM_HOME")
+      sireumHomeOpt = checkSireumDir(env)
+      if (sireumHomeOpt.isEmpty) {
+        browseSireumHome(project).foreach(p =>
+          sireumHomeOpt = checkSireumDir(p))
       }
-    saveConfiguration()
-    r
+    }
+    sireumHomeOpt match {
+      case Some(homeDir) =>
+        if (isSireumInSync(homeDir)) {
+          saveConfiguration()
+          Some(homeDir)
+        } else {
+          None
+        }
+      case _ => None
+    }
   }
 
-  def sireumHomeString: String = sireumHome.map(_.getAbsolutePath).getOrElse("")
+  private def isSireumInSync(homeDir: File): Boolean = {
+    if (currentPluginVersion.endsWith("-SNAPSHOT")) {
+      pluginVersion = ""
+      sireumVersion = ""
+      return true
+    }
+    if ("" == pluginVersion) pluginVersion = currentPluginVersion
+    val currentSireumVersion = {
+      val verFile = new File(homeDir, "bin/VER")
+      if (verFile.exists)
+        FileUtil.readFile(FileUtil.toUri(verFile))._1.trim
+      else sireumVersion
+    }
+    if (currentPluginVersion != pluginVersion &&
+      currentSireumVersion == sireumVersion) {
+      Messages.showErrorDialog(
+        """The Sireum IntelliJ plugin has been updated but Sireum v3 has not.
+          |Please update Sireum through the command-line first:
+          |(1) do a git pull, and
+          |(2) run Sireum again.""".stripMargin,
+        "Sireum Needs Updating")
+      false
+    } else {
+      pluginVersion = currentPluginVersion
+      sireumVersion = currentSireumVersion
+      true
+    }
+  }
+
+  def sireumHomeString: String = sireumHomeOpt.map(_.getAbsolutePath).getOrElse("")
 
   def envVarsString: String = envVars.map(p => s"${p._1}=${p._2}").
     mkString(scala.util.Properties.lineSeparator)
@@ -188,14 +228,18 @@ object SireumApplicationComponent {
     val pc = PropertiesComponent.getInstance
     envVars = Option(pc.getValue(sireumEnvVarsKey)).flatMap(parseEnvVars).getOrElse(ilinkedMapEmpty)
     vmArgs = Option(pc.getValue(sireumVarArgsKey)).flatMap(parseVmArgs).getOrElse(ivectorEmpty)
-    sireumHome = Option(pc.getValue(sireumHomeKey)).flatMap(p => checkSireumDir(p, vmArgs, envVars))
+    sireumHomeOpt = Option(pc.getValue(sireumHomeKey)).flatMap(p => checkSireumDir(p, vmArgs, envVars))
+    sireumVersion = Option(pc.getValue(sireumVersionKey)).getOrElse("")
+    pluginVersion = Option(pc.getValue(sireumPluginVersionKey)).getOrElse("")
   }
 
   def saveConfiguration(): Unit = {
     val pc = PropertiesComponent.getInstance
-    pc.setValue(sireumHomeKey, sireumHome.map(_.getAbsolutePath).orNull)
+    pc.setValue(sireumHomeKey, sireumHomeOpt.map(_.getAbsolutePath).orNull)
     pc.setValue(sireumEnvVarsKey, envVarsString)
     pc.setValue(sireumVarArgsKey, vmArgs.mkString(" "))
+    pc.setValue(sireumVersionKey, sireumVersion)
+    pc.setValue(sireumPluginVersionKey, pluginVersion)
   }
 }
 

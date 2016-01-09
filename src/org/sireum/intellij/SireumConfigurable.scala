@@ -135,8 +135,8 @@ final class SireumConfigurable extends SireumForm with Configurable {
     envVars = parseEnvVars(envVarsTextArea.getText).getOrElse(ilinkedMapEmpty)
     vmArgs = parseVmArgs(vmArgsTextField.getText).getOrElse(ivectorEmpty)
     val path = sireumHomeTextField.getText
-    sireumHome = checkSireumDir(path, vmArgs, envVars)
-    if (sireumHome.nonEmpty) saveConfiguration()
+    sireumHomeOpt = checkSireumDir(path, vmArgs, envVars)
+    if (sireumHomeOpt.nonEmpty) saveConfiguration()
     else {
       Messages.showMessageDialog(null: Project, sireumInvalid(path),
         "Invalid Sireum Configuration", null)

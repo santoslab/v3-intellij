@@ -28,8 +28,10 @@ package org.sireum.intellij
 import java.io._
 import java.util.concurrent.BlockingQueue
 
+import com.intellij.ide.plugins.PluginManager
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.components._
+import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.fileChooser._
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
@@ -38,6 +40,7 @@ import org.sireum.util._
 import org.sireum.util.jvm.Exec
 
 object SireumApplicationComponent {
+  lazy val version = PluginManager.getPlugin(PluginId.getId("org.sireum.intellij")).getVersion
   private val sireumKey = "org.sireum."
   private val sireumHomeKey = sireumKey.dropRight(1)
   private val sireumVarArgsKey = sireumKey + "vmargs"

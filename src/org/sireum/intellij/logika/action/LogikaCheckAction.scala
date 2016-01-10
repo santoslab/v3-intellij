@@ -442,6 +442,7 @@ private class LogikaCheckAction extends LogikaAction {
     if (editor == null) return
     enableEditor(project, editor)
     analyze(project, editor, isSilent = false)
+    e.getPresentation.setEnabled(true)
   }
 
   final override def update(e: AnActionEvent): Unit = {

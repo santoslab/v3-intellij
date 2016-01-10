@@ -379,7 +379,6 @@ object LogikaCheckAction {
         for (lTag <- lTags) (lTag: @unchecked) match {
           case tag: UriTag with LocationInfoTag with MessageTag with KindTag with SeverityTag =>
             val start = tag.offset
-            val end = tag.offset + tag.length
             val (ta, icon) = tag match {
               case _: InfoTag =>
                 if (tag.kind == "hint") (null, gutterHintIcon)
@@ -387,6 +386,7 @@ object LogikaCheckAction {
               case _: WarningTag => (warningAttr, warningIcon)
               case _: ErrorTag | _: InternalError => (errorAttr, errorIcon)
             }
+            val end = scala.math.min(tag.offset + tag.length, editor.getDocument.getTextLength)
             val rh = mm.addRangeHighlighter(start, end, 1000000, ta, HighlighterTargetArea.EXACT_RANGE)
             if (ta != null) {
               rh.setErrorStripeTooltip(tag.message)

@@ -130,7 +130,7 @@ object Lexer {
             add(token, FunTextAttributes)
         case NUM =>
           add(token, constantAttr)
-        case SSTRING =>
+        case Antlr4LogikaLexer.STRING =>
           add(token, stringAttr)
         case COMMENT =>
           add(token, blockCommentAttr)

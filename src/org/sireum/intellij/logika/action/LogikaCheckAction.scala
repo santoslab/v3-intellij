@@ -301,7 +301,11 @@ object LogikaCheckAction {
     }
     val inlTags = tags.filter(_.isInstanceOf[InfoTag])
     if (inlTags.nonEmpty) {
-      val msg = inlTags.map(_.asInstanceOf[MessageTag].message).mkString(lineSep)
+      val msg = inlTags.flatMap(_ match {
+        case tag: KindTag with MessageTag if tag.kind != "hint" => Some(tag.message)
+        case tag: MessageTag => Some(tag.message)
+        case _ => None
+      }).mkString(lineSep)
       val isVerified = msg.contains("is accepted")
       val (title, icon) =
         if (isVerified) ("Logika Verified", verifiedInfoIcon)
@@ -336,19 +340,18 @@ object LogikaCheckAction {
             return
         }
       }
-      val mm = editor.getMarkupModel
-      val rhs = editor.getUserData(analysisDataKey)
-      if (rhs != null)
-        for (rh <- rhs)
-          mm.removeHighlighter(rh)
-      editor.putUserData(analysisDataKey, null)
-      val (lTags, nlTags) = tags.partition(
-        _.isInstanceOf[UriTag with LocationInfoTag with MessageTag with KindTag with SeverityTag])
-      notifyHelper(Some(project), Some(editor), r.isSilent, nlTags)
-      if (lTags.isEmpty) return
       if (!editor.isDisposed) {
         val mm = editor.getMarkupModel
-        var rhs = ivectorEmpty[RangeHighlighter]
+        var rhs = editor.getUserData(analysisDataKey)
+        if (rhs != null)
+          for (rh <- rhs)
+            mm.removeHighlighter(rh)
+        editor.putUserData(analysisDataKey, null)
+        val (lTags, nlTags) = tags.partition(
+          _.isInstanceOf[UriTag with LocationInfoTag with MessageTag with KindTag with SeverityTag])
+        notifyHelper(Some(project), Some(editor), r.isSilent, nlTags)
+        if (lTags.isEmpty) return
+        rhs = ivectorEmpty[RangeHighlighter]
         val cs = editor.getColorsScheme
         val errorColor = cs.getAttributes(
           TextAttributesKey.find("ERRORS_ATTRIBUTES")).getErrorStripeColor

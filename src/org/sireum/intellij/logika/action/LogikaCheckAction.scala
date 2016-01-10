@@ -352,10 +352,27 @@ object LogikaCheckAction {
         val cs = editor.getColorsScheme
         val errorColor = cs.getAttributes(
           TextAttributesKey.find("ERRORS_ATTRIBUTES")).getErrorStripeColor
-        val errorAttr = new TextAttributes(null, errorColor, null, null, Font.PLAIN)
+        val errorAttr =
+          if (LogikaConfigurable.underwave) {
+            new TextAttributes(null, null, errorColor, EffectType.WAVE_UNDERSCORE, Font.PLAIN)
+          } else {
+            new TextAttributes(null, errorColor, null, null, Font.PLAIN)
+          }
         errorAttr.setErrorStripeColor(errorColor)
-        val warningAttr = cs.getAttributes(TextAttributesKey.find("WARNING_ATTRIBUTES"))
-        val infoAttr = cs.getAttributes(TextAttributesKey.find("TYPO"))
+        val warningColor = cs.getAttributes(TextAttributesKey.find("WARNING_ATTRIBUTES")).getErrorStripeColor
+        val warningAttr =
+          if (LogikaConfigurable.underwave) {
+            new TextAttributes(null, null, warningColor, EffectType.WAVE_UNDERSCORE, Font.PLAIN)
+          } else {
+            new TextAttributes(null, warningColor, null, null, Font.PLAIN)
+          }
+        val infoColor = cs.getAttributes(TextAttributesKey.find("TYPO")).getEffectColor
+        val infoAttr =
+          if (LogikaConfigurable.underwave) {
+            new TextAttributes(null, null, infoColor, EffectType.WAVE_UNDERSCORE, Font.PLAIN)
+          } else {
+            new TextAttributes(null, infoColor, null, null, Font.PLAIN)
+          }
         for (lTag <- lTags) (lTag: @unchecked) match {
           case tag: UriTag with LocationInfoTag with MessageTag with KindTag with SeverityTag =>
             val start = tag.offset

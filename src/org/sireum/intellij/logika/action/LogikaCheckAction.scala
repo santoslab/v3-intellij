@@ -352,26 +352,26 @@ object LogikaCheckAction {
         val cs = editor.getColorsScheme
         val errorColor = cs.getAttributes(
           TextAttributesKey.find("ERRORS_ATTRIBUTES")).getErrorStripeColor
-        val errorAttr =
+        val (errorIcon, errorAttr) =
           if (LogikaConfigurable.underwave) {
-            new TextAttributes(null, null, errorColor, EffectType.WAVE_UNDERSCORE, Font.PLAIN)
+            (gutterErrorIcon, new TextAttributes(null, null, errorColor, EffectType.WAVE_UNDERSCORE, Font.PLAIN))
           } else {
-            new TextAttributes(null, errorColor, null, null, Font.PLAIN)
+            (null, new TextAttributes(null, errorColor, null, null, Font.PLAIN))
           }
         errorAttr.setErrorStripeColor(errorColor)
         val warningColor = cs.getAttributes(TextAttributesKey.find("WARNING_ATTRIBUTES")).getErrorStripeColor
-        val warningAttr =
+        val (warningIcon, warningAttr) =
           if (LogikaConfigurable.underwave) {
-            new TextAttributes(null, null, warningColor, EffectType.WAVE_UNDERSCORE, Font.PLAIN)
+            (gutterWarningIcon, new TextAttributes(null, null, warningColor, EffectType.WAVE_UNDERSCORE, Font.PLAIN))
           } else {
-            new TextAttributes(null, warningColor, null, null, Font.PLAIN)
+            (null, new TextAttributes(null, warningColor, null, null, Font.PLAIN))
           }
         val infoColor = cs.getAttributes(TextAttributesKey.find("TYPO")).getEffectColor
-        val infoAttr =
+        val (infoIcon, infoAttr) =
           if (LogikaConfigurable.underwave) {
-            new TextAttributes(null, null, infoColor, EffectType.WAVE_UNDERSCORE, Font.PLAIN)
+            (gutterInfoIcon, new TextAttributes(null, null, infoColor, EffectType.WAVE_UNDERSCORE, Font.PLAIN))
           } else {
-            new TextAttributes(null, infoColor, null, null, Font.PLAIN)
+            (null, new TextAttributes(null, infoColor, null, null, Font.PLAIN))
           }
         for (lTag <- lTags) (lTag: @unchecked) match {
           case tag: UriTag with LocationInfoTag with MessageTag with KindTag with SeverityTag =>
@@ -380,9 +380,9 @@ object LogikaCheckAction {
             val (ta, icon) = tag match {
               case _: InfoTag =>
                 if (tag.kind == "hint") (null, gutterHintIcon)
-                else (infoAttr, gutterInfoIcon)
-              case _: WarningTag => (warningAttr, null)
-              case _: ErrorTag | _: InternalError => (errorAttr, null)
+                else (infoAttr, infoIcon)
+              case _: WarningTag => (warningAttr, warningIcon)
+              case _: ErrorTag | _: InternalError => (errorAttr, errorIcon)
             }
             val rh = mm.addRangeHighlighter(start, end, 1000000, ta, HighlighterTargetArea.EXACT_RANGE)
             if (ta != null) {

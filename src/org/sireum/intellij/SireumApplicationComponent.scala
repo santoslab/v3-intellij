@@ -37,7 +37,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import org.sireum.intellij.logika.LogikaConfigurable
 import org.sireum.util._
-import org.sireum.util.jvm.{FileUtil, Exec}
+import org.sireum.util.jvm.Exec
 
 object SireumApplicationComponent {
   private val sireumKey = "org.sireum."
@@ -52,7 +52,6 @@ object SireumApplicationComponent {
   private[intellij] var sireumHomeOpt: Option[File] = None
   private[intellij] var vmArgs: ISeq[String] = ivectorEmpty
   private[intellij] var envVars = ilinkedMapEmpty[String, String]
-  private[intellij] var sireumVersion: String = ""
   private[intellij] var pluginVersion: String = ""
 
   private var terminated: Boolean = false
@@ -81,32 +80,19 @@ object SireumApplicationComponent {
   private def isSireumInSync(homeDir: File): Boolean = {
     if (currentPluginVersion.endsWith("-SNAPSHOT")) {
       pluginVersion = ""
-      sireumVersion = ""
       return true
     }
     if ("" == pluginVersion) pluginVersion = currentPluginVersion
-    val currentSireumVersion = {
-      val verFile = new File(homeDir, "bin/VER")
-      if (verFile.exists)
-        FileUtil.readFile(FileUtil.toUri(verFile))._1.trim
-      else sireumVersion
-    }
-    if (currentPluginVersion != pluginVersion &&
-      currentSireumVersion == sireumVersion) {
-      Messages.showErrorDialog(
-        """The Sireum IntelliJ plugin has been updated but Sireum v3 has not.
-          |Please update Sireum through the command-line first:
+    if (currentPluginVersion != pluginVersion) {
+      Messages.showInfoMessage(
+        """The Sireum IntelliJ plugin has been updated.
+          |Please update Sireum through the command-line:
           |(1) do a git pull, and
           |(2) run Sireum again.""".stripMargin,
-        "Sireum Needs Updating")
-      false
-    } else if (currentPluginVersion == pluginVersion &&
-      currentSireumVersion != sireumVersion) true
-    else {
-      pluginVersion = currentPluginVersion
-      sireumVersion = currentSireumVersion
-      true
+        "Sireum May Need Updating")
     }
+    pluginVersion = currentPluginVersion
+    true
   }
 
   def sireumHomeString: String = sireumHomeOpt.map(_.getAbsolutePath).getOrElse("")
@@ -235,7 +221,6 @@ object SireumApplicationComponent {
     envVars = Option(pc.getValue(sireumEnvVarsKey)).flatMap(parseEnvVars).getOrElse(ilinkedMapEmpty)
     vmArgs = Option(pc.getValue(sireumVarArgsKey)).flatMap(parseVmArgs).getOrElse(ivectorEmpty)
     sireumHomeOpt = Option(pc.getValue(sireumHomeKey)).flatMap(p => checkSireumDir(p, vmArgs, envVars))
-    sireumVersion = Option(pc.getValue(sireumVersionKey)).getOrElse("")
     pluginVersion = Option(pc.getValue(sireumPluginVersionKey)).getOrElse("")
   }
 
@@ -244,7 +229,6 @@ object SireumApplicationComponent {
     pc.setValue(sireumHomeKey, sireumHomeOpt.map(_.getAbsolutePath).orNull)
     pc.setValue(sireumEnvVarsKey, envVarsString)
     pc.setValue(sireumVarArgsKey, vmArgs.mkString(" "))
-    pc.setValue(sireumVersionKey, sireumVersion)
     pc.setValue(sireumPluginVersionKey, pluginVersion)
   }
 }

@@ -274,20 +274,19 @@ object LogikaCheckAction {
                    isSilent: Boolean, tags: ISeq[Tag]): Unit = {
 
     val project = projectOpt.orNull
-    val status = editorOpt.exists(_.getUserData(statusKey))
+    val statusOpt = editorOpt.map(_.getUserData(statusKey))
     val lineSep = scala.util.Properties.lineSeparator
     val ienlTags = tags.filter(_.isInstanceOf[InternalErrorTag])
     if (ienlTags.nonEmpty) {
-      if (!isSilent || status)
-        notify(new Notification(
-          "Sireum Logika", "Logika Internal Error",
-          ienlTags.map(_.asInstanceOf[MessageTag].message).mkString(lineSep),
-          NotificationType.ERROR), project)
+      notify(new Notification(
+        "Sireum Logika", "Logika Internal Error",
+        ienlTags.map(_.asInstanceOf[MessageTag].message).mkString(lineSep),
+        NotificationType.ERROR), project)
       editorOpt.foreach(_.putUserData(statusKey, false))
     }
     val enlTags = tags.filter(_.isInstanceOf[ErrorTag])
     if (enlTags.nonEmpty) {
-      if (!isSilent || status)
+      if (!isSilent || statusOpt.getOrElse(true))
         notify(new Notification(
           "Sireum Logika", "Logika Error",
           enlTags.map(_.asInstanceOf[MessageTag].message).mkString(lineSep),
@@ -303,22 +302,18 @@ object LogikaCheckAction {
     }
     val inlTags = tags.filter(_.isInstanceOf[InfoTag])
     if (inlTags.nonEmpty) {
-      val msg = inlTags.flatMap(_ match {
-        case tag: KindTag with MessageTag if tag.kind != "hint" => Some(tag.message)
-        case tag: MessageTag => Some(tag.message)
-        case _ => None
-      }).mkString(lineSep)
+      val msg = inlTags.map(_.asInstanceOf[MessageTag].message).mkString(lineSep)
       val isVerified = msg.contains("is accepted")
       val (title, icon) =
-        if (isVerified) ("Logika Verified", verifiedInfoIcon)
-        else ("Logika Information", null)
-      if (!isSilent || (!status && isVerified))
+        if (isVerified) {
+          editorOpt.foreach(_.putUserData(statusKey, true))
+          ("Logika Verified", verifiedInfoIcon)
+        } else ("Logika Information", null)
+      if (isVerified || !isSilent)
         notify(new Notification("Sireum Logika", title, msg,
           NotificationType.INFORMATION, null) {
           override def getIcon: Icon = icon
         }, project)
-      if (isVerified)
-        editorOpt.foreach(_.putUserData(statusKey, true))
     }
   }
 

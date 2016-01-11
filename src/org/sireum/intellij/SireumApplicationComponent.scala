@@ -100,7 +100,9 @@ object SireumApplicationComponent {
           |(2) run Sireum again.""".stripMargin,
         "Sireum Needs Updating")
       false
-    } else {
+    } else if (currentPluginVersion == pluginVersion &&
+      currentSireumVersion != sireumVersion) true
+    else {
       pluginVersion = currentPluginVersion
       sireumVersion = currentSireumVersion
       true

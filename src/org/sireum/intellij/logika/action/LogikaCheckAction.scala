@@ -99,6 +99,7 @@ object LogikaCheckAction {
       val statusWaiting = "Sireum Logika is waiting to work"
       val statusWorking = "Sireum Logika is working"
       var statusTooltip = statusIdle
+      var shutdown = false
       lazy val statusBarWidget: StatusBarWidget = new StatusBarWidget {
 
         override def ID(): String = "Sireum Logika"
@@ -117,6 +118,7 @@ object LogikaCheckAction {
                     editorMap.clear()
                     processInit.foreach(_.destroy())
                     processInit = None
+                    shutdown = true
                     statusBar.removeWidget(statusBarWidget.ID())
                   }
                 }
@@ -134,7 +136,7 @@ object LogikaCheckAction {
       val t = new Thread {
         override def run(): Unit = {
           val defaultFrame = icons.length / 2 + 1
-          while (!terminated) {
+          while (!terminated && !shutdown) {
             if (editorMap.nonEmpty || request.nonEmpty) {
               frame = (frame + 1) % icons.length
               statusTooltip =

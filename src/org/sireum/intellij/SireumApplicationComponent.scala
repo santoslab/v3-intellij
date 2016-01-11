@@ -145,31 +145,32 @@ object SireumApplicationComponent {
                        args: String*): Option[scala.sys.process.Process] =
     getSireumHome(project) match {
       case Some(d) =>
-        val path = d.getAbsolutePath
-        Some(new Exec().process(
-          Seq(s"$path/platform/java/bin/java", "-jar",
-            s"$path/bin/sireum.jar") ++ args, { os =>
-            try {
-              val w = new OutputStreamWriter(os)
-              val lineSep = scala.util.Properties.lineSeparator
-              while (!terminated) {
-                val m = queue.take()
-                w.write(m)
-                w.write(lineSep)
-                w.flush()
+        val javaPath = new File(d, "platform/java/bin/java").getAbsolutePath
+        val sireumJarPath = new File(d, "bin/sireum.jar").getAbsolutePath
+        Some(new Exec().process((javaPath +: vmArgs) ++
+          Seq("-Dfile.encoding=UTF-8", "-jar", sireumJarPath) ++
+          args, { os =>
+          try {
+            val w = new OutputStreamWriter(os)
+            val lineSep = scala.util.Properties.lineSeparator
+            while (!terminated) {
+              val m = queue.take()
+              w.write(m)
+              w.write(lineSep)
+              w.flush()
+            }
+          } finally os.close()
+        }, { is =>
+          try {
+            val r = new BufferedReader(new InputStreamReader(is))
+            while (!terminated) {
+              val line = r.readLine()
+              if (line != null) {
+                processOutput(line)
               }
-            } finally os.close()
-          }, { is =>
-            try {
-              val r = new BufferedReader(new InputStreamReader(is))
-              while (!terminated) {
-                val line = r.readLine()
-                if (line != null) {
-                  processOutput(line)
-                }
-              }
-            } finally is.close()
-          }, ("SIREUM_HOME", path)))
+            }
+          } finally is.close()
+        }, ("SIREUM_HOME", d.getAbsolutePath)))
       case _ => None
     }
 
@@ -178,10 +179,13 @@ object SireumApplicationComponent {
                         envVars: ILinkedMap[String, String],
                         input: Option[String],
                         args: Seq[String]): Option[String] = {
+    val d = new File(path)
+    val javaPath = new File(d, "platform/java/bin/java").getAbsolutePath
+    val sireumJarPath = new File(d, "bin/sireum.jar").getAbsolutePath
     if (path.trim == "") None
     else new Exec().run(0,
-      (s"$path/platform/java/bin/java" +: vmArgs) ++ Seq("-jar",
-        s"$path/bin/sireum.jar") ++ args,
+      (javaPath +: vmArgs) ++ Seq("-Dfile.encoding=UTF-8", "-jar",
+        sireumJarPath) ++ args,
       input, envVars.toSeq :+("SIREUM_HOME", path): _*) match {
       case Exec.StringResult(s, _) => Some(s)
       case _ => None

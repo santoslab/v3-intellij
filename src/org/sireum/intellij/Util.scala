@@ -25,16 +25,19 @@
 
 package org.sireum.intellij
 
-import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.{FileDocumentManager, FileEditorManager}
 import com.intellij.openapi.project.Project
 
 object Util {
   def getFilePath(project: Project): Option[String] = {
     val fem = FileEditorManager.getInstance(project)
-    fem.getSelectedFiles match {
-      case Array(f, _*) => Some(f.getCanonicalPath)
-      case _ => None
-    }
+    val editor = FileEditorManager.
+      getInstance(project).getSelectedTextEditor
+    if (editor == null) return None
+    val fdm = FileDocumentManager.getInstance
+    val file = fdm.getFile(editor.getDocument)
+    if (file == null) return None
+    Some(file.getCanonicalPath)
   }
 
   def getFileExt(project: Project): String = {

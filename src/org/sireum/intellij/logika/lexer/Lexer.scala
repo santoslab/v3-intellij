@@ -71,6 +71,9 @@ object Lexer {
     extends TextAttributes(null, null, null, null, Font.ITALIC)
     with LogikaHighlightingTextAttributes
 
+  def fore(ta: TextAttributes): TextAttributes =
+    new TextAttributes(ta.getForegroundColor, null, null, null, Font.PLAIN)
+
   def addSyntaxHighlighter(project: Project, editor: Editor): Unit = {
     val mm = editor.getMarkupModel
     var rhs = ivectorEmpty[RangeHighlighter]
@@ -103,15 +106,15 @@ object Lexer {
 
     import DefaultLanguageHighlighterColors._
     val plainAttr = new TextAttributes(cs.getDefaultForeground, null, null, null, Font.PLAIN)
-    val stringAttr = cs.getAttributes(STRING)
-    val keywordAttr = cs.getAttributes(KEYWORD)
-    val lineCommentAttr = cs.getAttributes(LINE_COMMENT)
-    val blockCommentAttr = cs.getAttributes(BLOCK_COMMENT)
-    val logikaAttr = new TextAttributes(lineCommentAttr.getForegroundColor, null, null, null, Font.PLAIN)
-    val typeAttr = cs.getAttributes(CLASS_REFERENCE)
-    val constantAttr = cs.getAttributes(NUMBER)
-    val justOpAttr = cs.getAttributes(CONSTANT)
-    val annAttr = cs.getAttributes(METADATA)
+    val stringAttr = fore(cs.getAttributes(STRING))
+    val keywordAttr = fore(cs.getAttributes(KEYWORD))
+    val lineCommentAttr = fore(cs.getAttributes(LINE_COMMENT))
+    val blockCommentAttr = fore(cs.getAttributes(BLOCK_COMMENT))
+    val logikaAttr = fore(lineCommentAttr)
+    val typeAttr = fore(cs.getAttributes(CLASS_REFERENCE))
+    val constantAttr = fore(cs.getAttributes(NUMBER))
+    val justOpAttr = fore(cs.getAttributes(CONSTANT))
+    val annAttr = fore(cs.getAttributes(METADATA))
 
     val ext = Util.getFileExt(project)
     if (ext == "scala" || ext == "sc") {

@@ -309,7 +309,7 @@ object LogikaCheckAction {
           editorOpt.foreach(_.putUserData(statusKey, true))
           ("Logika Verified", verifiedInfoIcon)
         } else ("Logika Information", null)
-      if (isVerified || !isSilent)
+      if (!isSilent || !(isVerified && statusOpt.getOrElse(false)))
         notify(new Notification("Sireum Logika", title, msg,
           NotificationType.INFORMATION, null) {
           override def getIcon: Icon = icon

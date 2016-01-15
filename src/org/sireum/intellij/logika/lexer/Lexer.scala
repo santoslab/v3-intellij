@@ -38,18 +38,17 @@ import org.sireum.util._
 
 object Lexer {
   final val syntaxHighlightingDataKey = new Key[ISeq[RangeHighlighter]]("Logika Highlighting Data")
-  final val propJusts = Set("premise", "andi", "^i", "ande1",
-    "^e1", "ande2", "^e2", "ori1", "Vi1", "ori2", "Vi2", "ore", "Ve",
-    "impliesi", "impliese", "noti", "negi", "note", "nege", "bottome",
-    "falsee", "Pbc")
+  final val propJusts = Set("premise", "andi", "ande1", "ande2", "ori1",
+    "Vi1", "ori2", "Vi2", "ore", "Ve", "impliesi", "impliese", "noti",
+    "negi", "note", "nege", "bottome", "falsee", "Pbc")
   final val predJusts = Set("foralli", "alli", "Ai", "foralle", "alle", "Ae",
     "existsi", "somei", "Ei", "existse", "somee", "Ee")
   final val progJusts = Set("subst1", "subst2", "algebra", "auto")
-  final val propOps = Set("not", "and", "^", "or", "V", "implies")
+  final val propOps = Set("not", "neg", "and", "or", "V", "implies")
   final val predOps = Set("forall", "all", "A", "exists", "some", "E")
   final val progOps = Set("*", "/", "%", "+", "-", "+:", ":+", "<", "<=",
-    "≤", ">", ">=", "≥", "=", "==", "!=", "≠")
-  final val justAndOps = propJusts ++ predJusts ++ progJusts ++ propOps ++ predOps
+    ">", ">=", "=", "==", "!=", "≤", "≥", "≠")
+  final val justs = propJusts ++ predJusts ++ progJusts
   final val types = Set("B", "Z", "ZS")
   final val constants = Set("true", "T", "⊤", "false", "F")
   final val constantJusts = Set("_|_", "⊥")
@@ -73,6 +72,12 @@ object Lexer {
 
   def fore(ta: TextAttributes): TextAttributes =
     new TextAttributes(ta.getForegroundColor, null, null, null, Font.PLAIN)
+
+  def foreIt(ta: TextAttributes): TextAttributes = {
+    val r = fore(ta)
+    r.setFontType(Font.ITALIC)
+    r
+  }
 
   def addSyntaxHighlighter(project: Project, editor: Editor): Unit = {
     val mm = editor.getMarkupModel
@@ -113,7 +118,8 @@ object Lexer {
     val logikaAttr = fore(lineCommentAttr)
     val typeAttr = fore(cs.getAttributes(CLASS_REFERENCE))
     val constantAttr = fore(cs.getAttributes(NUMBER))
-    val justOpAttr = fore(cs.getAttributes(CONSTANT))
+    val justAttr = foreIt(cs.getAttributes(CONSTANT))
+    val opAttr = fore(cs.getAttributes(CONSTANT))
     val annAttr = fore(cs.getAttributes(METADATA))
 
     val ext = Util.getFileExt(project)
@@ -141,8 +147,8 @@ object Lexer {
           add(token, lineCommentAttr)
         case _ =>
           val text = token.getText
-          if (justAndOps.contains(text))
-            add(token, justOpAttr)
+          if (justs.contains(text))
+            add(token, justAttr)
           else if (types.contains(text))
             add(token, typeAttr)
           else if (keywords.contains(text))
@@ -158,41 +164,41 @@ object Lexer {
               add(tM1, logikaAttr)
           } else if (constantJusts.contains(text)) {
             if (peek(i + 1, _.getText == "e")) {
-              add(token, justOpAttr)
-              add(tokens(i + 1), justOpAttr)
+              add(token, justAttr)
+              add(tokens(i + 1), justAttr)
               i += 1
             } else add(token, constantAttr)
-          } else if (text == "&&" || text == "∧") {
+          } else if (text == "&&" || text == "∧" || text == "^") {
             if (peek(i + 1,
               t => andJustFollow.contains(t.getText)) &&
               peek(i + 2, _.getType == NUM)) {
-              add(token, justOpAttr)
-              add(tokens(i + 1), justOpAttr)
+              add(token, justAttr)
+              add(tokens(i + 1), justAttr)
               i += 1
-            } else add(token, justOpAttr)
+            } else add(token, opAttr)
           } else if (text == "||" || text == "∨") {
             if (peek(i + 1,
               t => orJustFollow.contains(t.getText)) &&
               peek(i + 2, _.getType == NUM)) {
-              add(token, justOpAttr)
-              add(tokens(i + 1), justOpAttr)
+              add(token, justAttr)
+              add(tokens(i + 1), justAttr)
               i += 1
-            } else add(token, justOpAttr)
+            } else add(token, opAttr)
           } else if (propIeJustFirst.contains(text)) {
             if (peek(i + 1,
               t => ieJustFollow.contains(t.getText)) &&
               peek(i + 2, _.getType == NUM)) {
-              add(token, justOpAttr)
-              add(tokens(i + 1), justOpAttr)
+              add(token, justAttr)
+              add(tokens(i + 1), justAttr)
               i += 1
-            } else add(token, justOpAttr)
+            } else add(token, opAttr)
           } else if (text == "∀" || text == "∃") {
             if (peek(i + 1, t => ieJustFollow.contains(t.getText)) &&
               peek(i + 2, t => t.getType == ID || t.getType == NUM)) {
-              add(token, justOpAttr)
-              add(tokens(i + 1), justOpAttr)
+              add(token, justAttr)
+              add(tokens(i + 1), justAttr)
               i += 1
-            } else add(token, justOpAttr)
+            } else add(token, justAttr)
           } else if (text == "@") {
             add(token, annAttr)
             if (peek(i + 1, _.getType == ID)) {
@@ -202,10 +208,10 @@ object Lexer {
           } else if (text == "invariant") {
             if (peek(i - 1, _.getText == "{"))
               add(token, keywordAttr)
-            else add(token, justOpAttr)
+            else add(token, justAttr)
           } else if (text == "assume") {
             if (!peek(i + 1, _.getText == "("))
-              add(token, justOpAttr)
+              add(token, justAttr)
           }
       }
       i += 1

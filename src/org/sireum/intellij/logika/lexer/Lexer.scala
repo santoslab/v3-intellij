@@ -40,7 +40,7 @@ object Lexer {
   final val syntaxHighlightingDataKey = new Key[ISeq[RangeHighlighter]]("Logika Highlighting Data")
   final val propJusts = Set("premise", "andi", "ande1", "ande2", "ori1",
     "Vi1", "ori2", "Vi2", "ore", "Ve", "impliesi", "impliese", "noti",
-    "negi", "note", "nege", "bottome", "falsee", "Pbc")
+    "negi", "note", "nege", "bottome", "falsee", "pbc")
   final val predJusts = Set("foralli", "alli", "Ai", "foralle", "alle", "Ae",
     "existsi", "somei", "Ei", "existse", "somee", "Ee")
   final val progJusts = Set("subst1", "subst2", "algebra", "auto")

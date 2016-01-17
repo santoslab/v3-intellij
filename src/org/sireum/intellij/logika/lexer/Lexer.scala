@@ -62,7 +62,7 @@ object Lexer {
     "null", "object", "override", "package", "private",
     "protected", "return", "sealed", "super", "this", "throw",
     "trait", "try", "type", "val", "var", "while", "with", "yield",
-    "pre", "requires", "modifies", "post", "ensures", "fact")
+    "pre", "requires", "modifies", "post", "ensures")
 
   sealed trait LogikaHighlightingTextAttributes
 
@@ -205,7 +205,7 @@ object Lexer {
               add(tokens(i + 1), annAttr)
               i += 1
             }
-          } else if (text == "invariant") {
+          } else if (text == "invariant" || text == "fact") {
             if (peek(i - 1, _.getText == "{"))
               add(token, keywordAttr)
             else add(token, justAttr)

@@ -33,7 +33,7 @@ import javax.swing.Icon
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.editor.event._
 
-import com.intellij.notification.{NotificationType, Notification, Notifications}
+import com.intellij.notification.{NotificationType, Notification}
 import com.intellij.openapi.actionSystem._
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
@@ -68,6 +68,7 @@ object LogikaCheckAction {
   val gutterWarningIcon = IconLoader.getIcon("/logika/icon/logika-gutter-warning.png")
   val gutterInfoIcon = IconLoader.getIcon("/logika/icon/logika-gutter-info.png")
   val gutterHintIcon = IconLoader.getIcon("/logika/icon/logika-gutter-hint.png")
+  val gutterSummoningIcon = IconLoader.getIcon("/logika/icon/logika-gutter-summoning.png")
   val verifiedInfoIcon = IconLoader.getIcon("/logika/icon/logika-verified-info.png")
   val queue = new LinkedBlockingQueue[String]()
   val editorMap = mmapEmpty[String, (Project, Editor)]
@@ -176,7 +177,7 @@ object LogikaCheckAction {
   def isEnabled(editor: Editor): Boolean =
     EditorEnabled == editor.getUserData(logikaKey)
 
-  def analyze(project: Project, editor: Editor, isSilent: Boolean): Unit = {
+  def analyze(project: Project, editor: Editor, isBackground: Boolean): Unit = {
     if (!isEnabled(editor)) return
     if (LogikaConfigurable.syntaxHighlighting)
       ApplicationManager.getApplication.invokeLater(
@@ -192,13 +193,18 @@ object LogikaCheckAction {
       (t, id)
     }
     def f(): String = {
-      Message.pickleInput(Check(requestId, isSilent,
-        LogikaConfigurable.hint, proofs, lastOnly = false,
+      Message.pickleInput(Check(
+        requestId = requestId,
+        isBackground = isBackground,
+        hintEnabled = LogikaConfigurable.hint,
+        inscribeSummoningsEnabled = LogikaConfigurable.inscribeSummonings,
+        proofs = proofs,
+        lastOnly = false,
         autoEnabled = LogikaConfigurable.autoEnabled,
         timeout = LogikaConfigurable.timeout,
-        checkSat = LogikaConfigurable.checkSat))
+        checkSatEnabled = LogikaConfigurable.checkSat))
     }
-    if (isSilent) {
+    if (isBackground) {
       this.synchronized {
         request = Some(Request(t, requestId, project, editor, f))
       }
@@ -224,7 +230,7 @@ object LogikaCheckAction {
     editor.getDocument.addDocumentListener(new DocumentListener {
       override def documentChanged(event: DocumentEvent): Unit = {
         if (LogikaConfigurable.backgroundAnalysis)
-          analyze(project, editor, isSilent = true)
+          analyze(project, editor, isBackground = true)
       }
 
       override def beforeDocumentChange(event: DocumentEvent): Unit = {}
@@ -257,48 +263,39 @@ object LogikaCheckAction {
     if (LogikaFileType.extensions.contains(ext)) {
       enableEditor(project, editor)
       editor.putUserData(statusKey, false)
-      analyze(project, editor, isSilent = true)
+      analyze(project, editor, isBackground = true)
     }
   }
 
-  def notify(n: Notification, project: Project): Unit =
-    new Thread() {
-      override def run(): Unit = {
-        Notifications.Bus.notify(n, project)
-        Thread.sleep(5000)
-        ApplicationManager.getApplication.invokeLater(() => n.expire())
-      }
-    }.start()
-
   def notifyHelper(projectOpt: Option[Project], editorOpt: Option[Editor],
-                   isSilent: Boolean, tags: ISeq[Tag]): Unit = {
+                   isBackground: Boolean, tags: ISeq[Tag]): Unit = {
 
     val project = projectOpt.orNull
     val statusOpt = editorOpt.map(_.getUserData(statusKey))
     val lineSep = scala.util.Properties.lineSeparator
     val ienlTags = tags.filter(_.isInstanceOf[InternalErrorTag])
     if (ienlTags.nonEmpty) {
-      notify(new Notification(
+      Util.notify(new Notification(
         "Sireum Logika", "Logika Internal Error",
         ienlTags.map(_.asInstanceOf[MessageTag].message).mkString(lineSep),
-        NotificationType.ERROR), project)
+        NotificationType.ERROR), project, shouldExpire = true)
       editorOpt.foreach(_.putUserData(statusKey, false))
     }
     val enlTags = tags.filter(_.isInstanceOf[ErrorTag])
     if (enlTags.nonEmpty) {
-      if (!isSilent || statusOpt.getOrElse(true))
-        notify(new Notification(
+      if (!isBackground || statusOpt.getOrElse(true))
+        Util.notify(new Notification(
           "Sireum Logika", "Logika Error",
           enlTags.map(_.asInstanceOf[MessageTag].message).mkString(lineSep),
-          NotificationType.ERROR), project)
+          NotificationType.ERROR), project, shouldExpire = true)
       editorOpt.foreach(_.putUserData(statusKey, false))
     }
     val wnlTags = tags.filter(_.isInstanceOf[WarningTag])
-    if (wnlTags.nonEmpty && !isSilent) {
-      notify(new Notification(
+    if (wnlTags.nonEmpty && !isBackground) {
+      Util.notify(new Notification(
         "Sireum Logika", "Logika Warning",
         wnlTags.map(_.asInstanceOf[MessageTag].message).mkString(lineSep),
-        NotificationType.WARNING, null), project)
+        NotificationType.WARNING, null), project, shouldExpire = true)
     }
     val inlTags = tags.filter(_.isInstanceOf[InfoTag])
     if (inlTags.nonEmpty) {
@@ -309,11 +306,11 @@ object LogikaCheckAction {
           editorOpt.foreach(_.putUserData(statusKey, true))
           ("Logika Verified", verifiedInfoIcon)
         } else ("Logika Information", null)
-      if (!isSilent || !(isVerified && statusOpt.getOrElse(false)))
-        notify(new Notification("Sireum Logika", title, msg,
+      if (!isBackground || !(isVerified && statusOpt.getOrElse(false)))
+        Util.notify(new Notification("Sireum Logika", title, msg,
           NotificationType.INFORMATION, null) {
           override def getIcon: Icon = icon
-        }, project)
+        }, project, shouldExpire = true)
     }
   }
 
@@ -324,7 +321,7 @@ object LogikaCheckAction {
         editorMap.synchronized {
           editorMap.clear()
         }
-        notifyHelper(None, None, isSilent = false, tags)
+        notifyHelper(None, None, isBackground = false, tags)
         return
       }
       val (project, editor) = editorMap.synchronized {
@@ -333,7 +330,7 @@ object LogikaCheckAction {
             editorMap -= r.requestId
             pe
           case _ =>
-            notifyHelper(None, None, isSilent = false, tags)
+            notifyHelper(None, None, isBackground = false, tags)
             return
         }
       }
@@ -346,7 +343,7 @@ object LogikaCheckAction {
         editor.putUserData(analysisDataKey, null)
         val (lTags, nlTags) = tags.partition(
           _.isInstanceOf[UriTag with LocationInfoTag with MessageTag with KindTag with SeverityTag])
-        notifyHelper(Some(project), Some(editor), r.isSilent, nlTags)
+        notifyHelper(Some(project), Some(editor), r.isBackground, nlTags)
         if (lTags.isEmpty) return
         rhs = ivectorEmpty[RangeHighlighter]
         val cs = editor.getColorsScheme
@@ -366,6 +363,7 @@ object LogikaCheckAction {
           } else {
             (null, new TextAttributes(null, warningColor, null, null, Font.PLAIN))
           }
+        warningAttr.setErrorStripeColor(warningColor)
         val infoColor = cs.getAttributes(TextAttributesKey.find("TYPO")).getEffectColor
         val (infoIcon, infoAttr) =
           if (LogikaConfigurable.underwave) {
@@ -375,17 +373,29 @@ object LogikaCheckAction {
           }
         for (lTag <- lTags) (lTag: @unchecked) match {
           case tag: UriTag with LocationInfoTag with MessageTag with KindTag with SeverityTag =>
-            val start = tag.offset
-            val (ta, icon) = tag match {
+            val (ta, icon, isLine) = tag match {
               case _: InfoTag =>
-                if (tag.kind == "hint") (null, gutterHintIcon)
-                else (infoAttr, infoIcon)
-              case _: WarningTag => (warningAttr, warningIcon)
-              case _: ErrorTag | _: InternalError => (errorAttr, errorIcon)
+                tag.kind match {
+                  case "hint" => (null, gutterHintIcon, true)
+                  case "summoning" => (null, gutterSummoningIcon, true)
+                  case _ => (infoAttr, infoIcon, false)
+                }
+              case _: WarningTag =>
+                tag.kind match {
+                  case "checksat" => (null, warningIcon, true)
+                  case _ => (warningAttr, warningIcon, false)
+                }
+              case _: ErrorTag | _: InternalError => (errorAttr, errorIcon, false)
             }
             val end = scala.math.min(tag.offset + tag.length, editor.getDocument.getTextLength)
-            val rh = mm.addRangeHighlighter(start, end, 1000000, ta, HighlighterTargetArea.EXACT_RANGE)
+            val rh =
+              if (isLine) mm.addLineHighlighter(tag.lineBegin - 1, 1000000, ta)
+              else mm.addRangeHighlighter(tag.offset, end, 1000000, ta, HighlighterTargetArea.EXACT_RANGE)
             if (ta != null) {
+              rh.setErrorStripeTooltip(tag.message)
+              rh.setThinErrorStripeMark(false)
+            } else if (tag.kind == "checksat") {
+              rh.setErrorStripeMarkColor(warningColor)
               rh.setErrorStripeTooltip(tag.message)
               rh.setThinErrorStripeMark(false)
             }
@@ -394,15 +404,18 @@ object LogikaCheckAction {
                 override def getIcon = icon
 
                 override def getTooltipText =
-                  if (tag.kind == "hint") "Click to show some hints"
-                  else tag.message
+                  tag.kind match {
+                    case "hint" => "Click to show some hints"
+                    case "summoning" => "Click to show scribed incantations"
+                    case _ => tag.message
+                  }
 
                 override def equals(other: Any) = false
 
                 override def hashCode = System.identityHashCode(this)
 
                 override def getClickAction =
-                  if (tag.kind == "hint")
+                  if (tag.kind == "hint" || tag.kind == "summoning")
                     (e: AnActionEvent) =>
                       Option(SireumToolWindowFactory.windows.get(project)).
                         foreach(f => {
@@ -441,7 +454,7 @@ private class LogikaCheckAction extends LogikaAction {
       getInstance(project).getSelectedTextEditor
     if (editor == null) return
     enableEditor(project, editor)
-    analyze(project, editor, isSilent = false)
+    analyze(project, editor, isBackground = false)
     e.getPresentation.setEnabled(true)
   }
 

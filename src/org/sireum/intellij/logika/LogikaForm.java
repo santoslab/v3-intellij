@@ -45,4 +45,5 @@ public abstract class LogikaForm {
     protected JTextField fileExtsTextField;
     protected JLabel fileExtsLabel;
     protected JCheckBox hintCheckBox;
+    protected JCheckBox inscribeSummoningsCheckBox;
 }

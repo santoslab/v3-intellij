@@ -46,6 +46,7 @@ object LogikaConfigurable {
   private val checkSatKey = logikaKey + "checkSat"
   private val fileExtsKey = logikaKey + "fileExts"
   private val hintKey = logikaKey + "hint"
+  private val inscribeSummoningsKey = logikaKey + "inscribeSummonings"
   private val logo = IconLoader.getIcon("/logika/icon/logika-logo.png")
   private[logika] var syntaxHighlighting = true
   private[logika] var underwave = true
@@ -56,6 +57,7 @@ object LogikaConfigurable {
   private[logika] var checkSat = false
   private[logika] var fileExts: ISeq[String] = ivector("sc")
   private[logika] var hint = false
+  private[logika] var inscribeSummonings = false
 
   def loadConfiguration(): Unit = {
     val pc = PropertiesComponent.getInstance
@@ -68,6 +70,7 @@ object LogikaConfigurable {
     checkSat = pc.getBoolean(checkSatKey, checkSat)
     fileExts = Option(pc.getValue(fileExtsKey)).flatMap(parseFileExts).getOrElse(fileExts)
     hint = pc.getBoolean(hintKey, hint)
+    inscribeSummonings = pc.getBoolean(inscribeSummoningsKey, inscribeSummonings)
   }
 
   def saveConfiguration(): Unit = {
@@ -81,6 +84,7 @@ object LogikaConfigurable {
     pc.setValue(checkSatKey, checkSat.toString)
     pc.setValue(fileExtsKey, fileExtsString)
     pc.setValue(hintKey, hint.toString)
+    pc.setValue(inscribeSummoningsKey, inscribeSummonings.toString)
   }
 
   def allFileExts: ISet[String] = LogikaFileType.extensions ++ fileExts
@@ -130,7 +134,8 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
         autoCheckBox.isSelected != autoEnabled ||
         checkSatCheckBox.isSelected != checkSat ||
         fileExtsTextField.getText != fileExtsString ||
-        hintCheckBox.isSelected != hint)
+        hintCheckBox.isSelected != hint ||
+        inscribeSummoningsCheckBox.isSelected != inscribeSummonings)
 
 
   override def createComponent(): JComponent = {
@@ -203,6 +208,7 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
     checkSat = checkSatCheckBox.isSelected
     fileExts = parseFileExts(fileExtsTextField.getText).getOrElse(fileExts)
     hint = hintCheckBox.isSelected
+    inscribeSummonings = inscribeSummoningsCheckBox.isSelected
     saveConfiguration()
   }
 
@@ -216,5 +222,6 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
     checkSatCheckBox.setSelected(checkSat)
     fileExtsTextField.setText(fileExtsString)
     hintCheckBox.setSelected(hint)
+    inscribeSummoningsCheckBox.setSelected(inscribeSummonings)
   }
 }

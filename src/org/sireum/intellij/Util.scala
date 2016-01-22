@@ -25,6 +25,8 @@
 
 package org.sireum.intellij
 
+import com.intellij.notification.{Notifications, Notification}
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.{FileDocumentManager, FileEditorManager}
 import com.intellij.openapi.project.Project
 
@@ -50,4 +52,17 @@ object Util {
       case _ => ""
     }
   }
+
+  def notify(n: Notification, project: Project, shouldExpire: Boolean): Unit =
+    if (shouldExpire)
+      new Thread() {
+        override def run(): Unit = {
+          Notifications.Bus.notify(n, project)
+
+          Thread.sleep(5000)
+          ApplicationManager.getApplication.invokeLater(() => n.expire())
+        }
+      }.start()
+    else
+      Notifications.Bus.notify(n, project)
 }

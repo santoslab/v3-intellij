@@ -30,6 +30,7 @@ import java.util.concurrent.BlockingQueue
 
 import com.intellij.ide.plugins.PluginManager
 import com.intellij.ide.util.PropertiesComponent
+import com.intellij.notification.{NotificationType, Notification}
 import com.intellij.openapi.components._
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.fileChooser._
@@ -67,32 +68,31 @@ object SireumApplicationComponent {
     }
     sireumHomeOpt match {
       case Some(homeDir) =>
-        if (isSireumInSync(homeDir)) {
-          saveConfiguration()
-          Some(homeDir)
-        } else {
-          None
-        }
-      case _ => None
+        checkSireumInSync(homeDir)
+        saveConfiguration()
+      case _ =>
     }
+    sireumHomeOpt
   }
 
-  private def isSireumInSync(homeDir: File): Boolean = {
+  private def isSource(homeDir: File): Boolean =
+    new File(homeDir, "bin/detect-build.sh").exists
+
+  private def checkSireumInSync(homeDir: File): Unit = {
     if (currentPluginVersion.endsWith("-SNAPSHOT")) {
       pluginVersion = ""
-      return true
+      return
     }
     if ("" == pluginVersion) pluginVersion = currentPluginVersion
-    if (currentPluginVersion != pluginVersion) {
+    if (currentPluginVersion != pluginVersion && isSource(homeDir)) {
       Messages.showInfoMessage(
-        """The Sireum IntelliJ plugin has been updated.
-          |Please update Sireum through the command-line:
-          |(1) do a git pull, and
-          |(2) run Sireum again.""".stripMargin,
+        s"""The Sireum IntelliJ plugin has been updated.
+            |Please update Sireum through the command-line:
+            |(1) do a git pull, and
+            |(2) run Sireum again.""".stripMargin,
         "Sireum May Need Updating")
     }
     pluginVersion = currentPluginVersion
-    true
   }
 
   def sireumHomeString: String = sireumHomeOpt.map(_.getAbsolutePath).getOrElse("")
@@ -233,13 +233,39 @@ object SireumApplicationComponent {
   }
 }
 
-class SireumApplicationComponent extends ApplicationComponent {
+import SireumApplicationComponent._
 
+class SireumApplicationComponent extends ApplicationComponent {
   override val getComponentName: String = "Sireum Application"
 
   override def initComponent(): Unit = {
     SireumApplicationComponent.loadConfiguration()
     LogikaConfigurable.loadConfiguration()
+
+    SireumApplicationComponent.sireumHomeOpt match {
+      case Some(homeDir) =>
+        if (!isSource(homeDir)) {
+          val reinstall = try {
+            import org.sireum.util.jvm._
+            val localVer = FileUtil.readFile(FileUtil.toUri(new File(homeDir, "bin/VER")))._1.trim
+            val onlineVer = scala.io.Source.fromURL("http://files.sireum.org/sireum-v3-VER").mkString.trim
+            localVer != onlineVer
+          } catch {
+            case _: Throwable => false
+          }
+          if (reinstall)
+            new Thread() {
+              override def run(): Unit = {
+                Thread.sleep(5000)
+                Util.notify(new Notification("Sireum Logika", "Sireum Update",
+                  "A newer Sireum version is available; please re-download/install.",
+                  NotificationType.INFORMATION),
+                  null, shouldExpire = false)
+              }
+            }.start()
+        }
+      case _ =>
+    }
   }
 
   override def disposeComponent(): Unit = {

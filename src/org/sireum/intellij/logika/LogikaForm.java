@@ -46,4 +46,17 @@ public abstract class LogikaForm {
     protected JLabel fileExtsLabel;
     protected JCheckBox hintCheckBox;
     protected JCheckBox inscribeSummoningsCheckBox;
+    protected JRadioButton forwardRadioButton;
+    protected JRadioButton backwardRadioButton;
+    protected JRadioButton symExeRadioButton;
+    protected JLabel checkerKindLabel;
+    protected JPanel devPanel;
+    protected JLabel bitsLabel;
+    protected JRadioButton bitsUnboundedRadioButton;
+    protected JPanel checkerKindPanel;
+    protected JPanel bitWidthPanel;
+    protected JRadioButton bits8RadioButton;
+    protected JRadioButton bits16RadioButton;
+    protected JRadioButton bits32RadioButton;
+    protected JRadioButton bits64RadioButton;
 }

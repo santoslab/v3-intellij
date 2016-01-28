@@ -33,9 +33,12 @@ import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.util.IconLoader
 import com.intellij.ui.JBColor
+import org.sireum.logika.message.CheckerKind
 import org.sireum.util._
 
 object LogikaConfigurable {
+  private val logo = IconLoader.getIcon("/logika/icon/logika-logo.png")
+
   private val logikaKey = "org.sireum.logika."
   private val syntaxHighlightingKey = logikaKey + "highlighting"
   private val underwaveKey = logikaKey + "underwave"
@@ -47,7 +50,9 @@ object LogikaConfigurable {
   private val fileExtsKey = logikaKey + "fileExts"
   private val hintKey = logikaKey + "hint"
   private val inscribeSummoningsKey = logikaKey + "inscribeSummonings"
-  private val logo = IconLoader.getIcon("/logika/icon/logika-logo.png")
+  private val checkerKindKey = logikaKey + "checkerKind"
+  private val bitWidthKey = logikaKey + "bitWidth"
+
   private[logika] var syntaxHighlighting = true
   private[logika] var underwave = true
   private[logika] var backgroundAnalysis = true
@@ -58,6 +63,8 @@ object LogikaConfigurable {
   private[logika] var fileExts: ISeq[String] = ivector("sc")
   private[logika] var hint = false
   private[logika] var inscribeSummonings = false
+  private[logika] var checkerKind = CheckerKind.Forward
+  private[logika] var bitWidth = 0
 
   def loadConfiguration(): Unit = {
     val pc = PropertiesComponent.getInstance
@@ -71,6 +78,8 @@ object LogikaConfigurable {
     fileExts = Option(pc.getValue(fileExtsKey)).flatMap(parseFileExts).getOrElse(fileExts)
     hint = pc.getBoolean(hintKey, hint)
     inscribeSummonings = pc.getBoolean(inscribeSummoningsKey, inscribeSummonings)
+    checkerKind = pc.getValue(checkerKindKey, checkerKind)
+    bitWidth = pc.getInt(bitWidthKey, bitWidth)
   }
 
   def saveConfiguration(): Unit = {
@@ -85,6 +94,8 @@ object LogikaConfigurable {
     pc.setValue(fileExtsKey, fileExtsString)
     pc.setValue(hintKey, hint.toString)
     pc.setValue(inscribeSummoningsKey, inscribeSummonings.toString)
+    pc.setValue(checkerKindKey, checkerKind)
+    pc.setValue(bitWidthKey, bitWidth.toString)
   }
 
   def allFileExts: ISet[String] = LogikaFileType.extensions ++ fileExts
@@ -135,10 +146,27 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
         checkSatCheckBox.isSelected != checkSat ||
         fileExtsTextField.getText != fileExtsString ||
         hintCheckBox.isSelected != hint ||
-        inscribeSummoningsCheckBox.isSelected != inscribeSummonings)
+        inscribeSummoningsCheckBox.isSelected != inscribeSummonings ||
+        selectedKind != checkerKind ||
+        selectedBitWidth != bitWidth)
 
+  private def selectedKind: CheckerKind.Value =
+    if (forwardRadioButton.isSelected) CheckerKind.Forward
+    else if (backwardRadioButton.isSelected) CheckerKind.Backward
+    else if (symExeRadioButton.isSelected) CheckerKind.SymExe
+    else sys.error("Unexpected checker kind.")
+
+  private def selectedBitWidth: Int =
+    if (bitsUnboundedRadioButton.isSelected) 0
+    else if (bits8RadioButton.isSelected) 8
+    else if (bits16RadioButton.isSelected) 16
+    else if (bits32RadioButton.isSelected) 32
+    else if (bits64RadioButton.isSelected) 64
+    else sys.error("Unexpected bit width.")
 
   override def createComponent(): JComponent = {
+    //devPanel.setVisible(false)
+
     def updateIdle() = {
       val text = idleTextField.getText
       validIdle = parseGe200(text).nonEmpty
@@ -193,6 +221,17 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
       override def removeUpdate(e: DocumentEvent): Unit = updateFileExts()
     })
 
+    symExeRadioButton.addChangeListener(_ => {
+      val bitsEnabled = symExeRadioButton.isSelected
+      bitsLabel.setEnabled(bitsEnabled)
+      bitsUnboundedRadioButton.setEnabled(bitsEnabled)
+      bits8RadioButton.setEnabled(bitsEnabled)
+      bits16RadioButton.setEnabled(bitsEnabled)
+      bits32RadioButton.setEnabled(bitsEnabled)
+      bits64RadioButton.setEnabled(bitsEnabled)
+      autoCheckBox.setEnabled(!bitsEnabled)
+    })
+
     logikaPanel
   }
 
@@ -209,6 +248,8 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
     fileExts = parseFileExts(fileExtsTextField.getText).getOrElse(fileExts)
     hint = hintCheckBox.isSelected
     inscribeSummonings = inscribeSummoningsCheckBox.isSelected
+    checkerKind = selectedKind
+    bitWidth = selectedBitWidth
     saveConfiguration()
   }
 
@@ -223,5 +264,17 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
     fileExtsTextField.setText(fileExtsString)
     hintCheckBox.setSelected(hint)
     inscribeSummoningsCheckBox.setSelected(inscribeSummonings)
+    checkerKind match {
+      case CheckerKind.Forward => forwardRadioButton.setSelected(true)
+      case CheckerKind.Backward => backwardRadioButton.setSelected(true)
+      case CheckerKind.SymExe => symExeRadioButton.setSelected(true)
+    }
+    bitWidth match {
+      case 0 => bitsUnboundedRadioButton.setSelected(true)
+      case 8 => bits8RadioButton.setSelected(true)
+      case 16 => bits16RadioButton.setSelected(true)
+      case 32 => bits32RadioButton.setSelected(true)
+      case 64 => bits64RadioButton.setSelected(true)
+    }
   }
 }

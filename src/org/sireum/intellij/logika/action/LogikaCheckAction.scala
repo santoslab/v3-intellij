@@ -196,13 +196,15 @@ object LogikaCheckAction {
       Message.pickleInput(Check(
         requestId = requestId,
         isBackground = isBackground,
+        kind = LogikaConfigurable.checkerKind,
         hintEnabled = LogikaConfigurable.hint,
         inscribeSummoningsEnabled = LogikaConfigurable.inscribeSummonings,
         proofs = proofs,
         lastOnly = false,
         autoEnabled = LogikaConfigurable.autoEnabled,
         timeout = LogikaConfigurable.timeout,
-        checkSatEnabled = LogikaConfigurable.checkSat))
+        checkSatEnabled = LogikaConfigurable.checkSat,
+        bitWidth = LogikaConfigurable.bitWidth))
     }
     if (isBackground) {
       this.synchronized {

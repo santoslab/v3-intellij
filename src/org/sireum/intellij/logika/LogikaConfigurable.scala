@@ -185,6 +185,16 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
       fileExtsLabel.setForeground(if (validFileExts) fgColor else JBColor.red)
       fileExtsTextField.setToolTipText(if (validTimeout) "OK" else "Ill-formed (format: semicolon-separated file extensions of [a-zA-Z0-9]+).")
     }
+    def updateSymExe() = {
+      val bitsEnabled = symExeRadioButton.isSelected
+      bitsLabel.setEnabled(bitsEnabled)
+      bitsUnboundedRadioButton.setEnabled(bitsEnabled)
+      //bits8RadioButton.setEnabled(bitsEnabled)
+      //bits16RadioButton.setEnabled(bitsEnabled)
+      //bits32RadioButton.setEnabled(bitsEnabled)
+      //bits64RadioButton.setEnabled(bitsEnabled)
+      autoCheckBox.setEnabled(!bitsEnabled)
+    }
 
     logoLabel.setIcon(logo)
 
@@ -221,16 +231,9 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
       override def removeUpdate(e: DocumentEvent): Unit = updateFileExts()
     })
 
-    symExeRadioButton.addChangeListener(_ => {
-      val bitsEnabled = symExeRadioButton.isSelected
-      bitsLabel.setEnabled(bitsEnabled)
-      bitsUnboundedRadioButton.setEnabled(bitsEnabled)
-      //bits8RadioButton.setEnabled(bitsEnabled)
-      //bits16RadioButton.setEnabled(bitsEnabled)
-      //bits32RadioButton.setEnabled(bitsEnabled)
-      //bits64RadioButton.setEnabled(bitsEnabled)
-      autoCheckBox.setEnabled(!bitsEnabled)
-    })
+    symExeRadioButton.addChangeListener(_ => updateSymExe())
+
+    updateSymExe()
 
     logikaPanel
   }

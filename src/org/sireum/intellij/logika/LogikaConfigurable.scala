@@ -225,10 +225,10 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
       val bitsEnabled = symExeRadioButton.isSelected
       bitsLabel.setEnabled(bitsEnabled)
       bitsUnboundedRadioButton.setEnabled(bitsEnabled)
-      bits8RadioButton.setEnabled(bitsEnabled)
-      bits16RadioButton.setEnabled(bitsEnabled)
-      bits32RadioButton.setEnabled(bitsEnabled)
-      bits64RadioButton.setEnabled(bitsEnabled)
+      //bits8RadioButton.setEnabled(bitsEnabled)
+      //bits16RadioButton.setEnabled(bitsEnabled)
+      //bits32RadioButton.setEnabled(bitsEnabled)
+      //bits64RadioButton.setEnabled(bitsEnabled)
       autoCheckBox.setEnabled(!bitsEnabled)
     })
 

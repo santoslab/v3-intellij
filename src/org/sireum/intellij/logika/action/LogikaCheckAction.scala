@@ -30,7 +30,7 @@ import java.awt.event.MouseEvent
 import java.util.concurrent._
 import javax.swing.Icon
 
-import com.intellij.openapi.editor.colors.TextAttributesKey
+import com.intellij.openapi.editor.colors.{EditorFontType, TextAttributesKey}
 import com.intellij.openapi.editor.event._
 
 import com.intellij.notification.{NotificationType, Notification}
@@ -422,8 +422,13 @@ object LogikaCheckAction {
                       Option(SireumToolWindowFactory.windows.get(project)).
                         foreach(f => {
                           val tw = f.toolWindow.asInstanceOf[ToolWindowImpl]
+                          f.logika.logikaTextArea.setFont(
+                            editor.getColorsScheme.getFont(EditorFontType.PLAIN))
+                          val msg =
+                            if (SystemInfo.isWindows) tag.message.replaceAll("⊢", "|-")
+                            else tag.message
                           tw.activate(
-                            () => f.logika.logikaTextArea.setText(tag.message))
+                            () => f.logika.logikaTextArea.setText(msg))
                         })
                   else null
               })

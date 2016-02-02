@@ -75,74 +75,74 @@
         </action>
 
         <action id="LogikaInsertTop" class="org.sireum.intellij.logika.action.LogikaInsertTop"
-                text="⊤"
-                description="Insert Symbol ⊤">
+                text="True"
+                description="Insert True Literal Symbol">
             <add-to-group group-id="SireumLogikaSymbolGroup"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl SEMICOLON" second-keystroke="T"/>
         </action>
         <action id="LogikaInsertBottom" class="org.sireum.intellij.logika.action.LogikaInsertBottom"
-                text="⊥"
-                description="Insert Symbol ⊥">
+                text="False"
+                description="Insert False Literal Symbol">
             <add-to-group group-id="SireumLogikaSymbolGroup"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl SEMICOLON" second-keystroke="F"/>
         </action>
         <action id="LogikaInsertLe" class="org.sireum.intellij.logika.action.LogikaInsertLe"
-                text="≤"
-                description="Insert Symbol ≤">
+                text="Less Than or Equal"
+                description="Insert Less Than or Equal Symbol">
             <add-to-group group-id="SireumLogikaSymbolGroup"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl SEMICOLON" second-keystroke="COMMA"/>
         </action>
         <action id="LogikaInsertGe" class="org.sireum.intellij.logika.action.LogikaInsertGe"
-                text="≥"
-                description="Insert Symbol ≥">
+                text="Greater Than or Equal"
+                description="Insert Greater Than or Equal Symbol">
             <add-to-group group-id="SireumLogikaSymbolGroup"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl SEMICOLON" second-keystroke="PERIOD"/>
         </action>
         <action id="LogikaInsertNe" class="org.sireum.intellij.logika.action.LogikaInsertNe"
-                text="≠"
-                description="Insert Symbol ≠">
+                text="Not Equal"
+                description="Insert Not Equal Symbol">
             <add-to-group group-id="SireumLogikaSymbolGroup"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl SEMICOLON" second-keystroke="1"/>
         </action>
         <action id="LogikaInsertNeg" class="org.sireum.intellij.logika.action.LogikaInsertNeg"
-                text="¬"
-                description="Insert Symbol ¬">
+                text="Negation"
+                description="Insert Negation Symbol">
             <add-to-group group-id="SireumLogikaSymbolGroup"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl SEMICOLON" second-keystroke="N"/>
         </action>
         <action id="LogikaInsertAnd" class="org.sireum.intellij.logika.action.LogikaInsertAnd"
-                text="∧"
-                description="Insert Symbol ∧">
+                text="Conjunction"
+                description="Insert Conjunction Symbol">
             <add-to-group group-id="SireumLogikaSymbolGroup"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl SEMICOLON" second-keystroke="6"/>
         </action>
         <action id="LogikaInsertOr" class="org.sireum.intellij.logika.action.LogikaInsertOr"
-                text="∨"
-                description="Insert Symbol ∨">
+                text="Disjunction"
+                description="Insert Disjunction Symbol">
             <add-to-group group-id="SireumLogikaSymbolGroup"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl SEMICOLON" second-keystroke="V"/>
         </action>
         <action id="LogikaInsertImplies" class="org.sireum.intellij.logika.action.LogikaInsertImplies"
-                text="→"
-                description="Insert Symbol →">
+                text="Implication"
+                description="Insert Implication Symbol">
             <add-to-group group-id="SireumLogikaSymbolGroup"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl SEMICOLON" second-keystroke="MINUS"/>
         </action>
         <action id="LogikaInsertForAll" class="org.sireum.intellij.logika.action.LogikaInsertForAll"
-                text="∀"
-                description="Insert Symbol ∀">
+                text="Forall"
+                description="Insert Forall Symbol">
             <add-to-group group-id="SireumLogikaSymbolGroup"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl SEMICOLON" second-keystroke="A"/>
         </action>
         <action id="LogikaInsertExists" class="org.sireum.intellij.logika.action.LogikaInsertExists"
-                text="∃"
-                description="Insert Symbol ∃">
+                text="Exists"
+                description="Insert Exists Symbol">
             <add-to-group group-id="SireumLogikaSymbolGroup"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl SEMICOLON" second-keystroke="E"/>
         </action>
         <action id="LogikaInsertSequent" class="org.sireum.intellij.logika.action.LogikaInsertSequent"
-                text="⊢"
-                description="Insert Symbol ⊢">
+                text="Sequent"
+                description="Insert Sequent Symbol">
             <add-to-group group-id="SireumLogikaSymbolGroup"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl SEMICOLON" second-keystroke="BACK_SLASH"/>
         </action>

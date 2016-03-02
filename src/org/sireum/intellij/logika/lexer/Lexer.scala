@@ -47,9 +47,21 @@ object Lexer {
   final val propOps = Set("not", "neg", "and", "or", "V", "implies")
   final val predOps = Set("forall", "all", "A", "exists", "some", "E")
   final val progOps = Set("*", "/", "%", "+", "-", "+:", ":+", "<", "<=",
-    ">", ">=", "=", "==", "!=", "≤", "≥", "≠")
+    ">", ">=", "=", "==", "!=", "≤", "≥", "≠", "|^", "<<", ">>", ">>>")
   final val justs = propJusts ++ predJusts ++ progJusts
-  final val types = Set("B", "Z", "ZS")
+  final val types = Set(
+    "B",
+    "Z", "Z8", "Z16", "Z32", "Z64",
+    "N", "N8", "N16", "N32", "N64",
+    "S8", "S16", "S32", "S64",
+    "U8", "U16", "U32", "U64",
+    "R", "F32", "F64",
+    "BS",
+    "ZS", "Z8S", "Z16S", "Z32S", "Z64S",
+    "NS", "N8S", "N16S", "N32S", "N64S",
+    "S8S", "S16S", "S32S", "S64S",
+    "U8S", "U16S", "U32S", "U64S",
+    "RS", "F32S", "F64S")
   final val constants = Set("true", "T", "⊤", "false", "F")
   final val constantJusts = Set("_|_", "⊥")
   final val andJustFollow = Set("i", "e1", "e2")
@@ -83,9 +95,12 @@ object Lexer {
     val mm = editor.getMarkupModel
     var rhs = ivectorEmpty[RangeHighlighter]
 
-    def add(t: Token, ta: TextAttributes): Unit =
-      rhs :+= mm.addRangeHighlighter(t.getStartIndex, t.getStopIndex + 1,
+    def addRange(start: Int, end: Int, ta: TextAttributes): Unit =
+      rhs :+= mm.addRangeHighlighter(start, end,
         900000, ta, HighlighterTargetArea.EXACT_RANGE)
+
+    def add(t: Token, ta: TextAttributes): Unit =
+      addRange(t.getStartIndex, t.getStopIndex + 1, ta)
 
     Option(editor.getUserData(syntaxHighlightingDataKey)) match {
       case Some(prevRhs) =>
@@ -145,6 +160,11 @@ object Lexer {
           add(token, blockCommentAttr)
         case Antlr4LogikaLexer.LINE_COMMENT =>
           add(token, lineCommentAttr)
+        case REAL | INT =>
+          val start = token.getStartIndex
+          addRange(start, start + 1, logikaAttr)
+          addRange(start + 2, token.getStopIndex, constantAttr)
+          addRange(token.getStopIndex + 1, token.getStopIndex + 1, logikaAttr)
         case _ =>
           val text = token.getText
           if (justs.contains(text))

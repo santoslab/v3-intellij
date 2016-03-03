@@ -162,8 +162,9 @@ object Lexer {
           add(token, lineCommentAttr)
         case REAL | INT =>
           val start = token.getStartIndex
-          addRange(start, start + 1, logikaAttr)
-          addRange(start + 2, token.getStopIndex, constantAttr)
+          val i = token.getText.indexOf('"')
+          addRange(start, start + i, logikaAttr)
+          addRange(start + i + 1, token.getStopIndex, constantAttr)
           addRange(token.getStopIndex + 1, token.getStopIndex + 1, logikaAttr)
         case _ =>
           val text = token.getText

@@ -96,8 +96,11 @@ object Lexer {
     var rhs = ivectorEmpty[RangeHighlighter]
 
     def addRange(start: Int, end: Int, ta: TextAttributes): Unit =
-      rhs :+= mm.addRangeHighlighter(start, end,
+      try rhs :+= mm.addRangeHighlighter(start, end,
         900000, ta, HighlighterTargetArea.EXACT_RANGE)
+      catch {
+        case _: IndexOutOfBoundsException =>
+      }
 
     def add(t: Token, ta: TextAttributes): Unit =
       addRange(t.getStartIndex, t.getStopIndex + 1, ta)

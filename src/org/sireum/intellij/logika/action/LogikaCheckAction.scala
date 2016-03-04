@@ -390,49 +390,52 @@ object LogikaCheckAction {
               case _: ErrorTag | _: InternalError => (errorAttr, errorIcon, false)
             }
             val end = scala.math.min(tag.offset + tag.length, editor.getDocument.getTextLength)
-            val rh =
-              if (isLine) mm.addLineHighlighter(tag.lineBegin - 1, 1000000, ta)
+            try {
+              val rh = if (isLine) mm.addLineHighlighter(tag.lineBegin - 1, 1000000, ta)
               else mm.addRangeHighlighter(tag.offset, end, 1000000, ta, HighlighterTargetArea.EXACT_RANGE)
-            if (ta != null) {
-              rh.setErrorStripeTooltip(tag.message)
-              rh.setThinErrorStripeMark(false)
-            } else if (tag.kind == "checksat") {
-              rh.setErrorStripeMarkColor(warningColor)
-              rh.setErrorStripeTooltip(tag.message)
-              rh.setThinErrorStripeMark(false)
+              if (ta != null) {
+                rh.setErrorStripeTooltip(tag.message)
+                rh.setThinErrorStripeMark(false)
+              } else if (tag.kind == "checksat") {
+                rh.setErrorStripeMarkColor(warningColor)
+                rh.setErrorStripeTooltip(tag.message)
+                rh.setThinErrorStripeMark(false)
+              }
+              if (icon != null)
+                rh.setGutterIconRenderer(new GutterIconRenderer {
+                  override def getIcon = icon
+
+                  override def getTooltipText =
+                    tag.kind match {
+                      case "hint" => "Click to show some hints"
+                      case "summoning" => "Click to show scribed incantations"
+                      case _ => tag.message
+                    }
+
+                  override def equals(other: Any) = false
+
+                  override def hashCode = System.identityHashCode(this)
+
+                  override def getClickAction =
+                    if (tag.kind == "hint" || tag.kind == "summoning")
+                      (e: AnActionEvent) =>
+                        Option(SireumToolWindowFactory.windows.get(project)).
+                          foreach(f => {
+                            val tw = f.toolWindow.asInstanceOf[ToolWindowImpl]
+                            f.logika.logikaTextArea.setFont(
+                              editor.getColorsScheme.getFont(EditorFontType.PLAIN))
+                            val msg =
+                              if (SystemInfo.isWindows) tag.message.replaceAll("⊢", "|-")
+                              else tag.message
+                            tw.activate(
+                              () => f.logika.logikaTextArea.setText(msg))
+                          })
+                    else null
+                })
+              rhs :+= rh
+            } catch {
+              case _: IndexOutOfBoundsException =>
             }
-            if (icon != null)
-              rh.setGutterIconRenderer(new GutterIconRenderer {
-                override def getIcon = icon
-
-                override def getTooltipText =
-                  tag.kind match {
-                    case "hint" => "Click to show some hints"
-                    case "summoning" => "Click to show scribed incantations"
-                    case _ => tag.message
-                  }
-
-                override def equals(other: Any) = false
-
-                override def hashCode = System.identityHashCode(this)
-
-                override def getClickAction =
-                  if (tag.kind == "hint" || tag.kind == "summoning")
-                    (e: AnActionEvent) =>
-                      Option(SireumToolWindowFactory.windows.get(project)).
-                        foreach(f => {
-                          val tw = f.toolWindow.asInstanceOf[ToolWindowImpl]
-                          f.logika.logikaTextArea.setFont(
-                            editor.getColorsScheme.getFont(EditorFontType.PLAIN))
-                          val msg =
-                            if (SystemInfo.isWindows) tag.message.replaceAll("⊢", "|-")
-                            else tag.message
-                          tw.activate(
-                            () => f.logika.logikaTextArea.setText(msg))
-                        })
-                  else null
-              })
-            rhs :+= rh
         }
         editor.putUserData(analysisDataKey, rhs)
       }

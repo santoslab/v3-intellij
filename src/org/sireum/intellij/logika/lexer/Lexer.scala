@@ -148,6 +148,8 @@ object Lexer {
     var i = 0
     while (i < size) {
       val token = tokens(i)
+      if (token.getText == "z8\"0\"")
+        println("here")
       token.getType match {
         case ID if !isProgramming =>
           if (peek(i + 1, _.getText == "("))
@@ -163,9 +165,9 @@ object Lexer {
         case REAL | INT =>
           val start = token.getStartIndex
           val i = token.getText.indexOf('"')
-          addRange(start, start + i, logikaAttr)
+          addRange(start, start + i + 1, logikaAttr)
           addRange(start + i + 1, token.getStopIndex, constantAttr)
-          addRange(token.getStopIndex + 1, token.getStopIndex + 1, logikaAttr)
+          addRange(token.getStopIndex, token.getStopIndex + 1, logikaAttr)
         case _ =>
           val text = token.getText
           if (justs.contains(text))

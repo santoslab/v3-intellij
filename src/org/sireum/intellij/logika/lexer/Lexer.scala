@@ -44,7 +44,7 @@ object Lexer {
   final val predJusts = Set("foralli", "alli", "Ai", "foralle", "alle", "Ae",
     "existsi", "somei", "Ei", "existse", "somee", "Ee")
   final val progJusts = Set("subst1", "subst2", "algebra", "auto")
-  final val propOps = Set("not", "neg", "and", "or", "V", "implies")
+  final val propOps = Set("not", "neg", "and", "xor", "or", "V", "implies")
   final val predOps = Set("forall", "all", "A", "exists", "some", "E")
   final val progOps = Set("*", "/", "%", "+", "-", "+:", ":+", "<", "<=",
     ">", ">=", "=", "==", "!=", "≤", "≥", "≠", "|^", "<<", ">>", ">>>")
@@ -194,22 +194,22 @@ object Lexer {
               add(tokens(i + 1), justAttr)
               i += 1
             } else add(token, constantAttr)
-          } else if (text == "&&" || text == "∧" || text == "^") {
+          } else if (text == "&" || text == "∧" || text == "^") {
             if (peek(i + 1,
               t => andJustFollow.contains(t.getText)) &&
               peek(i + 2, _.getType == NUM)) {
               add(token, justAttr)
               add(tokens(i + 1), justAttr)
               i += 1
-            } else add(token, opAttr)
-          } else if (text == "||" || text == "∨") {
+            } else if (text == "∧" || text == "^") add(token, opAttr)
+          } else if (text == "|" || text == "V") {
             if (peek(i + 1,
               t => orJustFollow.contains(t.getText)) &&
               peek(i + 2, _.getType == NUM)) {
               add(token, justAttr)
               add(tokens(i + 1), justAttr)
               i += 1
-            } else add(token, opAttr)
+            } else if (text == "V") add(token, opAttr)
           } else if (propIeJustFirst.contains(text)) {
             if (peek(i + 1,
               t => ieJustFollow.contains(t.getText)) &&
@@ -218,7 +218,7 @@ object Lexer {
               add(tokens(i + 1), justAttr)
               i += 1
             } else add(token, opAttr)
-          } else if (text == "∀" || text == "∃") {
+          } else if (text == "∀" || text == "A" || text == "∃" || text == "E") {
             if (peek(i + 1, t => ieJustFollow.contains(t.getText)) &&
               peek(i + 2, t => t.getType == ID || t.getType == NUM)) {
               add(token, justAttr)

@@ -80,7 +80,7 @@ object Lexer {
 
   object FunTextAttributes
     extends TextAttributes(null, null, null, null, Font.ITALIC)
-    with LogikaHighlightingTextAttributes
+      with LogikaHighlightingTextAttributes
 
   def fore(ta: TextAttributes): TextAttributes =
     new TextAttributes(ta.getForegroundColor, null, null, null, Font.PLAIN)
@@ -134,7 +134,7 @@ object Lexer {
     val lineCommentAttr = fore(cs.getAttributes(LINE_COMMENT))
     val blockCommentAttr = fore(cs.getAttributes(BLOCK_COMMENT))
     val logikaAttr = fore(lineCommentAttr)
-    val typeAttr = fore(cs.getAttributes(CLASS_REFERENCE))
+    val typeAttr = foreIt(cs.getAttributes(CLASS_REFERENCE))
     val constantAttr = fore(cs.getAttributes(NUMBER))
     val justAttr = foreIt(cs.getAttributes(CONSTANT))
     val opAttr = fore(cs.getAttributes(CONSTANT))
@@ -188,7 +188,9 @@ object Lexer {
             val tM1 = tokens(i - 1)
             if (tM1.getText == "}")
               add(tM1, logikaAttr)
-          } else if (constantJusts.contains(text)) {
+          } else if (constants.contains(text))
+            add(token, constantAttr)
+          else if (constantJusts.contains(text)) {
             if (peek(i + 1, _.getText == "e")) {
               add(token, justAttr)
               add(tokens(i + 1), justAttr)

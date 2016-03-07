@@ -76,6 +76,7 @@ object SireumApplicationComponent {
   }
 
   private def isSource(homeDir: File): Boolean =
+    currentPluginVersion.endsWith("-SNAPSHOT") ||
     new File(homeDir, "bin/detect-build.sh").exists
 
   private def checkSireumInSync(homeDir: File): Unit = {

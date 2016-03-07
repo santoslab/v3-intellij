@@ -45,7 +45,6 @@ object SireumApplicationComponent {
   private val sireumHomeKey = sireumKey.dropRight(1)
   private val sireumVarArgsKey = sireumKey + "vmargs"
   private val sireumEnvVarsKey = sireumKey + "envvars"
-  private val sireumVersionKey = sireumKey + "version"
   private val sireumPluginVersionKey = sireumKey + "plugin.version"
   private lazy val currentPluginVersion =
     PluginManager.getPlugin(

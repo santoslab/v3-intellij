@@ -50,7 +50,7 @@ object SireumApplicationComponent {
     PluginManager.getPlugin(
       PluginId.getId("org.sireum.intellij")).getVersion
   private[intellij] var sireumHomeOpt: Option[File] = None
-  private[intellij] var vmArgs: ISeq[String] = ivectorEmpty
+  private[intellij] var vmArgs: ISeq[String] = ivector("-Xss2m")
   private[intellij] var envVars = ilinkedMapEmpty[String, String]
   private[intellij] var pluginVersion: String = ""
 

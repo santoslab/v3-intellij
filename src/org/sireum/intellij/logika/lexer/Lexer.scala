@@ -204,14 +204,14 @@ object Lexer {
               add(tokens(i + 1), justAttr)
               i += 1
             } else if (text == "∧" || text == "^") add(token, opAttr)
-          } else if (text == "|" || text == "V") {
+          } else if (text == "|" || text == "∨" || text == "V") {
             if (peek(i + 1,
               t => orJustFollow.contains(t.getText)) &&
               peek(i + 2, _.getType == NUM)) {
               add(token, justAttr)
               add(tokens(i + 1), justAttr)
               i += 1
-            } else if (text == "V") add(token, opAttr)
+            } else if (text == "∨" || text == "V") add(token, opAttr)
           } else if (propIeJustFirst.contains(text)) {
             if (peek(i + 1,
               t => ieJustFollow.contains(t.getText)) &&

@@ -3,11 +3,6 @@
     <properties maven-id="com.lihaoyi:upickle_2.11:0.3.9" />
     <CLASSES>
       <root url="jar://$MAVEN_REPOSITORY$/com/lihaoyi/upickle_2.11/0.3.9/upickle_2.11-0.3.9.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scala-lang/scala-compiler/2.11.4/scala-compiler-2.11.4.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scala-lang/scala-library/2.11.4/scala-library-2.11.4.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scala-lang/scala-reflect/2.11.4/scala-reflect-2.11.4.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scala-lang/modules/scala-xml_2.11/1.0.2/scala-xml_2.11-1.0.2.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scala-lang/modules/scala-parser-combinators_2.11/1.0.2/scala-parser-combinators_2.11-1.0.2.jar!/" />
       <root url="jar://$MAVEN_REPOSITORY$/com/lihaoyi/derive_2.11/0.3.9/derive_2.11-0.3.9.jar!/" />
       <root url="jar://$MAVEN_REPOSITORY$/com/lihaoyi/acyclic_2.11/0.1.2/acyclic_2.11-0.1.2.jar!/" />
       <root url="jar://$MAVEN_REPOSITORY$/org/spire-math/jawn-parser_2.11/0.8.3/jawn-parser_2.11-0.8.3.jar!/" />

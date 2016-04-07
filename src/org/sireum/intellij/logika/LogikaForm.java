@@ -59,4 +59,5 @@ public abstract class LogikaForm {
     protected JRadioButton bits16RadioButton;
     protected JRadioButton bits32RadioButton;
     protected JRadioButton bits64RadioButton;
+    protected JCheckBox coneInfluenceCheckBox;
 }

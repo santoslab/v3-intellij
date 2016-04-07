@@ -199,6 +199,7 @@ object LogikaCheckAction {
         kind = LogikaConfigurable.checkerKind,
         hintEnabled = LogikaConfigurable.hint,
         inscribeSummoningsEnabled = LogikaConfigurable.inscribeSummonings,
+        coneInfluenceEnabled = LogikaConfigurable.coneInfluence,
         proofs = proofs,
         lastOnly = false,
         autoEnabled = LogikaConfigurable.autoEnabled,

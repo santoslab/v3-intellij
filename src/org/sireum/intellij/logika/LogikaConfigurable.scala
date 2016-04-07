@@ -50,6 +50,7 @@ object LogikaConfigurable {
   private val fileExtsKey = logikaKey + "fileExts"
   private val hintKey = logikaKey + "hint"
   private val inscribeSummoningsKey = logikaKey + "inscribeSummonings"
+  private val coneInfluenceKey = logikaKey + "coneInfluence"
   private val checkerKindKey = logikaKey + "checkerKind"
   private val bitWidthKey = logikaKey + "bitWidth"
 
@@ -63,6 +64,7 @@ object LogikaConfigurable {
   private[logika] var fileExts: ISeq[String] = ivector("sc")
   private[logika] var hint = false
   private[logika] var inscribeSummonings = false
+  private[logika] var coneInfluence = false
   private[logika] var checkerKind = CheckerKind.Forward
   private[logika] var bitWidth = 0
 
@@ -78,6 +80,7 @@ object LogikaConfigurable {
     fileExts = Option(pc.getValue(fileExtsKey)).flatMap(parseFileExts).getOrElse(fileExts)
     hint = pc.getBoolean(hintKey, hint)
     inscribeSummonings = pc.getBoolean(inscribeSummoningsKey, inscribeSummonings)
+    coneInfluence = pc.getBoolean(coneInfluenceKey, coneInfluence)
     checkerKind = pc.getValue(checkerKindKey, checkerKind)
     bitWidth = pc.getInt(bitWidthKey, bitWidth)
   }
@@ -94,6 +97,7 @@ object LogikaConfigurable {
     pc.setValue(fileExtsKey, fileExtsString)
     pc.setValue(hintKey, hint.toString)
     pc.setValue(inscribeSummoningsKey, inscribeSummonings.toString)
+    pc.setValue(coneInfluenceKey, coneInfluence.toString)
     pc.setValue(checkerKindKey, checkerKind)
     pc.setValue(bitWidthKey, bitWidth.toString)
   }
@@ -147,6 +151,7 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
         fileExtsTextField.getText != fileExtsString ||
         hintCheckBox.isSelected != hint ||
         inscribeSummoningsCheckBox.isSelected != inscribeSummonings ||
+        coneInfluenceCheckBox.isSelected != coneInfluence ||
         selectedKind != checkerKind ||
         selectedBitWidth != bitWidth)
 
@@ -251,6 +256,7 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
     fileExts = parseFileExts(fileExtsTextField.getText).getOrElse(fileExts)
     hint = hintCheckBox.isSelected
     inscribeSummonings = inscribeSummoningsCheckBox.isSelected
+    coneInfluence = coneInfluenceCheckBox.isSelected
     checkerKind = selectedKind
     bitWidth = selectedBitWidth
     saveConfiguration()
@@ -267,6 +273,7 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
     fileExtsTextField.setText(fileExtsString)
     hintCheckBox.setSelected(hint)
     inscribeSummoningsCheckBox.setSelected(inscribeSummonings)
+    coneInfluenceCheckBox.setSelected(coneInfluence)
     checkerKind match {
       case CheckerKind.Forward => forwardRadioButton.setSelected(true)
       case CheckerKind.Backward => backwardRadioButton.setSelected(true)

@@ -158,7 +158,7 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
   private def selectedKind: CheckerKind.Value =
     if (forwardRadioButton.isSelected) CheckerKind.Forward
     else if (backwardRadioButton.isSelected) CheckerKind.Backward
-    else if (symExeRadioButton.isSelected) CheckerKind.SymExe
+    else if (symExeRadioButton.isSelected) CheckerKind.SummarizingSymExe
     else sys.error("Unexpected checker kind.")
 
   private def selectedBitWidth: Int =
@@ -277,7 +277,7 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
     checkerKind match {
       case CheckerKind.Forward => forwardRadioButton.setSelected(true)
       case CheckerKind.Backward => backwardRadioButton.setSelected(true)
-      case CheckerKind.SymExe => symExeRadioButton.setSelected(true)
+      case CheckerKind.SummarizingSymExe => symExeRadioButton.setSelected(true)
     }
     bitWidth match {
       case 0 => bitsUnboundedRadioButton.setSelected(true)

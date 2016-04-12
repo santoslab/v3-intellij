@@ -183,7 +183,7 @@ object LogikaCheckAction {
       ApplicationManager.getApplication.invokeLater(
         (() => Lexer.addSyntaxHighlighter(project, editor)): Runnable,
         ((_: Any) => editor.isDisposed): Condition[Any])
-    if (!LogikaConfigurable.backgroundAnalysis) return
+    if (isBackground && !LogikaConfigurable.backgroundAnalysis) return
     init(project)
     val input = editor.getDocument.getText
     val proofs = ivector(ProofFile(Some(Util.getFilePath(project).get), input))

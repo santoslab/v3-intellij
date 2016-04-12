@@ -436,6 +436,7 @@ object LogikaCheckAction {
               rhs :+= rh
             } catch {
               case _: IndexOutOfBoundsException =>
+              case _: IllegalArgumentException =>
             }
         }
         editor.putUserData(analysisDataKey, rhs)

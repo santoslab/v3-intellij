@@ -205,7 +205,10 @@ object LogikaCheckAction {
         autoEnabled = LogikaConfigurable.autoEnabled,
         timeout = LogikaConfigurable.timeout,
         checkSatEnabled = LogikaConfigurable.checkSat,
-        bitWidth = LogikaConfigurable.bitWidth))
+        bitWidth = LogikaConfigurable.bitWidth,
+        loopBound = LogikaConfigurable.loopBound,
+        recursionBound = LogikaConfigurable.recursionBound,
+        useMethodContract = LogikaConfigurable.methodContract))
     }
     if (isBackground) {
       this.synchronized {

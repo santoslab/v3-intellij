@@ -60,4 +60,12 @@ public abstract class LogikaForm {
     protected JRadioButton bits32RadioButton;
     protected JRadioButton bits64RadioButton;
     protected JCheckBox coneInfluenceCheckBox;
+    protected JRadioButton unrollingSymExeRadioButton;
+    protected JPanel boundsPanel;
+    protected JLabel loopBoundLabel;
+    protected JTextField loopBoundTextField;
+    protected JLabel recursionBoundLabel;
+    protected JTextField recursionBoundTextField;
+    protected JCheckBox methodContractCheckBox;
+    protected JLabel boundingLabel;
 }

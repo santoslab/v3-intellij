@@ -53,6 +53,9 @@ object LogikaConfigurable {
   private val coneInfluenceKey = logikaKey + "coneInfluence"
   private val checkerKindKey = logikaKey + "checkerKind"
   private val bitWidthKey = logikaKey + "bitWidth"
+  private val loopBoundKey = logikaKey + "loopBound"
+  private val recursionBoundKey = logikaKey + "recursionBound"
+  private val methodContractKey = logikaKey + "methodContract"
 
   private[logika] var syntaxHighlighting = true
   private[logika] var underwave = true
@@ -67,6 +70,9 @@ object LogikaConfigurable {
   private[logika] var coneInfluence = false
   private[logika] var checkerKind = CheckerKind.Forward
   private[logika] var bitWidth = 0
+  private[logika] var loopBound = 10
+  private[logika] var recursionBound = 10
+  private[logika] var methodContract = true
 
   def loadConfiguration(): Unit = {
     val pc = PropertiesComponent.getInstance
@@ -83,6 +89,9 @@ object LogikaConfigurable {
     coneInfluence = pc.getBoolean(coneInfluenceKey, coneInfluence)
     checkerKind = pc.getValue(checkerKindKey, checkerKind)
     bitWidth = pc.getInt(bitWidthKey, bitWidth)
+    loopBound = pc.getInt(loopBoundKey, loopBound)
+    recursionBound = pc.getInt(recursionBoundKey, recursionBound)
+    methodContract = pc.getBoolean(methodContractKey, methodContract)
   }
 
   def saveConfiguration(): Unit = {
@@ -100,6 +109,9 @@ object LogikaConfigurable {
     pc.setValue(coneInfluenceKey, coneInfluence.toString)
     pc.setValue(checkerKindKey, checkerKind)
     pc.setValue(bitWidthKey, bitWidth.toString)
+    pc.setValue(loopBoundKey, loopBound.toString)
+    pc.setValue(recursionBoundKey, recursionBound.toString)
+    pc.setValue(methodContractKey, methodContract.toString)
   }
 
   def allFileExts: ISet[String] = LogikaFileType.extensions ++ fileExts
@@ -110,6 +122,14 @@ object LogikaConfigurable {
     try {
       val n = text.toInt
       if (n < 200) None else Some(n)
+    } catch {
+      case _: Throwable => None
+    }
+
+  def parsePosInteger(text: String): Option[PosInteger] =
+    try {
+      val n = text.toInt
+      if (n <= 0) None else Some(n)
     } catch {
       case _: Throwable => None
     }
@@ -133,6 +153,8 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
   private var validIdle = true
   private var validTimeout = true
   private var validFileExts = true
+  private var validLoopBound = true
+  private var validRecursionBound = true
   private var fgColor: Color = _
 
   override def getDisplayName: String = "Logika"
@@ -140,7 +162,8 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
   override def getHelpTopic: String = null
 
   override def isModified: Boolean =
-    validIdle && validTimeout && validFileExts &&
+    validIdle && validTimeout && validFileExts && validLoopBound &&
+      validRecursionBound &&
       (highlightingCheckBox.isSelected != syntaxHighlighting ||
         underwaveCheckBox.isSelected != underwave ||
         backgroundCheckBox.isSelected != backgroundAnalysis ||
@@ -153,12 +176,16 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
         inscribeSummoningsCheckBox.isSelected != inscribeSummonings ||
         coneInfluenceCheckBox.isSelected != coneInfluence ||
         selectedKind != checkerKind ||
-        selectedBitWidth != bitWidth)
+        selectedBitWidth != bitWidth ||
+        loopBoundTextField.getText != loopBound.toString ||
+        recursionBoundTextField.getText != recursionBound.toString ||
+        methodContractCheckBox.isSelected != methodContract)
 
   private def selectedKind: CheckerKind.Value =
     if (forwardRadioButton.isSelected) CheckerKind.Forward
     else if (backwardRadioButton.isSelected) CheckerKind.Backward
     else if (symExeRadioButton.isSelected) CheckerKind.SummarizingSymExe
+    else if (unrollingSymExeRadioButton.isSelected) CheckerKind.UnrollingSymExe
     else sys.error("Unexpected checker kind.")
 
   private def selectedBitWidth: Int =
@@ -171,6 +198,7 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
 
   override def createComponent(): JComponent = {
     //devPanel.setVisible(false)
+    //unrollingSymExeRadioButton.setEnabled(false)
 
     def updateIdle() = {
       val text = idleTextField.getText
@@ -190,15 +218,34 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
       fileExtsLabel.setForeground(if (validFileExts) fgColor else JBColor.red)
       fileExtsTextField.setToolTipText(if (validTimeout) "OK" else "Ill-formed (format: semicolon-separated file extensions of [a-zA-Z0-9]+).")
     }
+    def updateLoopBound() = {
+      val text = loopBoundTextField.getText
+      validLoopBound = parsePosInteger(text).nonEmpty
+      loopBoundLabel.setForeground(if (validLoopBound) fgColor else JBColor.red)
+      loopBoundTextField.setToolTipText(if (validLoopBound) "OK" else "Must be at least 1.")
+    }
+    def updateRecursionBound() = {
+      val text = recursionBoundTextField.getText
+      validRecursionBound = parsePosInteger(text).nonEmpty
+      recursionBoundLabel.setForeground(if (validRecursionBound) fgColor else JBColor.red)
+      recursionBoundTextField.setToolTipText(if (validRecursionBound) "OK" else "Must be at least 1.")
+    }
     def updateSymExe() = {
-      val bitsEnabled = symExeRadioButton.isSelected
-      bitsLabel.setEnabled(bitsEnabled)
-      bitsUnboundedRadioButton.setEnabled(bitsEnabled)
-      bits8RadioButton.setEnabled(bitsEnabled)
-      bits16RadioButton.setEnabled(bitsEnabled)
-      bits32RadioButton.setEnabled(bitsEnabled)
-      bits64RadioButton.setEnabled(bitsEnabled)
-      autoCheckBox.setEnabled(!bitsEnabled)
+      val isUnrolling = unrollingSymExeRadioButton.isSelected
+      val isSymExe = symExeRadioButton.isSelected || isUnrolling
+      bitsLabel.setEnabled(isSymExe)
+      bitsUnboundedRadioButton.setEnabled(isSymExe)
+      bits8RadioButton.setEnabled(isSymExe)
+      bits16RadioButton.setEnabled(isSymExe)
+      bits32RadioButton.setEnabled(isSymExe)
+      bits64RadioButton.setEnabled(isSymExe)
+      autoCheckBox.setEnabled(!isSymExe)
+      boundingLabel.setEnabled(isUnrolling)
+      loopBoundLabel.setEnabled(isUnrolling)
+      loopBoundTextField.setEnabled(isUnrolling)
+      recursionBoundLabel.setEnabled(isUnrolling)
+      recursionBoundTextField.setEnabled(isUnrolling)
+      methodContractCheckBox.setEnabled(isUnrolling)
     }
 
     logoLabel.setIcon(logo)
@@ -236,7 +283,24 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
       override def removeUpdate(e: DocumentEvent): Unit = updateFileExts()
     })
 
+    loopBoundTextField.getDocument.addDocumentListener(new DocumentListener {
+      override def insertUpdate(e: DocumentEvent): Unit = updateLoopBound()
+
+      override def changedUpdate(e: DocumentEvent): Unit = updateLoopBound()
+
+      override def removeUpdate(e: DocumentEvent): Unit = updateLoopBound()
+    })
+
+    recursionBoundTextField.getDocument.addDocumentListener(new DocumentListener {
+      override def insertUpdate(e: DocumentEvent): Unit = updateRecursionBound()
+
+      override def changedUpdate(e: DocumentEvent): Unit = updateRecursionBound()
+
+      override def removeUpdate(e: DocumentEvent): Unit = updateRecursionBound()
+    })
+
     symExeRadioButton.addChangeListener(_ => updateSymExe())
+    unrollingSymExeRadioButton.addChangeListener(_ => updateSymExe())
 
     updateSymExe()
 
@@ -259,6 +323,9 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
     coneInfluence = coneInfluenceCheckBox.isSelected
     checkerKind = selectedKind
     bitWidth = selectedBitWidth
+    loopBound = parsePosInteger(loopBoundTextField.getText).getOrElse(loopBound)
+    recursionBound = parsePosInteger(recursionBoundTextField.getText).getOrElse(recursionBound)
+    methodContract = methodContractCheckBox.isSelected
     saveConfiguration()
   }
 
@@ -278,6 +345,7 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
       case CheckerKind.Forward => forwardRadioButton.setSelected(true)
       case CheckerKind.Backward => backwardRadioButton.setSelected(true)
       case CheckerKind.SummarizingSymExe => symExeRadioButton.setSelected(true)
+      case CheckerKind.UnrollingSymExe => unrollingSymExeRadioButton.setSelected(true)
     }
     bitWidth match {
       case 0 => bitsUnboundedRadioButton.setSelected(true)
@@ -286,5 +354,8 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
       case 32 => bits32RadioButton.setSelected(true)
       case 64 => bits64RadioButton.setSelected(true)
     }
+    loopBoundTextField.setText(loopBound.toString)
+    recursionBoundTextField.setText(recursionBound.toString)
+    methodContractCheckBox.setSelected(methodContract)
   }
 }

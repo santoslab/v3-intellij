@@ -67,5 +67,4 @@ public abstract class LogikaForm {
     protected JLabel recursionBoundLabel;
     protected JTextField recursionBoundTextField;
     protected JCheckBox methodContractCheckBox;
-    protected JLabel boundingLabel;
 }

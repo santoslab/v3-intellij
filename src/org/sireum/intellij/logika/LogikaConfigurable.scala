@@ -240,12 +240,11 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
       bits32RadioButton.setEnabled(isSymExe)
       bits64RadioButton.setEnabled(isSymExe)
       autoCheckBox.setEnabled(!isSymExe)
-      boundingLabel.setEnabled(isUnrolling)
       loopBoundLabel.setEnabled(isUnrolling)
       loopBoundTextField.setEnabled(isUnrolling)
       recursionBoundLabel.setEnabled(isUnrolling)
       recursionBoundTextField.setEnabled(isUnrolling)
-      methodContractCheckBox.setEnabled(isUnrolling)
+      //methodContractCheckBox.setEnabled(isUnrolling)
     }
 
     logoLabel.setIcon(logo)

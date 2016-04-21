@@ -235,7 +235,7 @@ object LogikaCheckAction {
     editor.putUserData(logikaKey, EditorEnabled)
     editor.getDocument.addDocumentListener(new DocumentListener {
       override def documentChanged(event: DocumentEvent): Unit = {
-        if (LogikaConfigurable.backgroundAnalysis)
+        if (LogikaConfigurable.syntaxHighlighting || LogikaConfigurable.backgroundAnalysis)
           analyze(project, editor, isBackground = true)
       }
 

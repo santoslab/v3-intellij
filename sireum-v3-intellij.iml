@@ -14,7 +14,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="org.scala-lang.modules:scala-java8-compat_2.11:0.7.0" level="project" />
     <orderEntry type="library" name="org.antlr:antlr4-runtime:4.5.3" level="project" />
-    <orderEntry type="library" name="com.lihaoyi:upickle_2.11:0.3.9" level="project" />
+    <orderEntry type="library" name="com.lihaoyi:upickle_2.11:0.4.1" level="project" />
     <orderEntry type="library" name="scala-sdk-2.11.8" level="project" />
     <orderEntry type="library" name="org.scala-lang.modules:scala-xml_2.11:1.0.5" level="project" />
     <orderEntry type="library" name="org.scala-lang.modules:scala-parser-combinators_2.11:1.0.4" level="project" />

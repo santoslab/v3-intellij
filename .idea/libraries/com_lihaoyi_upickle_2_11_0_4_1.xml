@@ -1,0 +1,16 @@
+<component name="libraryTable">
+  <library name="com.lihaoyi:upickle_2.11:0.4.1" type="repository">
+    <properties maven-id="com.lihaoyi:upickle_2.11:0.4.1" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/lihaoyi/upickle_2.11/0.4.1/upickle_2.11-0.4.1.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/com/lihaoyi/derive_2.11/0.4.1/derive_2.11-0.4.1.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/com/lihaoyi/sourcecode_2.11/0.1.1/sourcecode_2.11-0.1.1.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/com/lihaoyi/acyclic_2.11/0.1.2/acyclic_2.11-0.1.2.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/spire-math/jawn-parser_2.11/0.8.3/jawn-parser_2.11-0.8.3.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/lihaoyi/upickle_2.11/0.4.1/upickle_2.11-0.4.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

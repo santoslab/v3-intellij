@@ -341,6 +341,13 @@ object LogikaCheckAction {
         }
       }
       if (!editor.isDisposed) {
+        Option(SireumToolWindowFactory.windows.get(project)).
+          foreach(f => {
+            f.logika.logikaTextArea.setFont(
+              editor.getColorsScheme.getFont(EditorFontType.PLAIN))
+            f.logika.logikaTextArea.setText("")
+          })
+        editor.getContentComponent.setToolTipText(null)
         val mm = editor.getMarkupModel
         var rhs = editor.getUserData(analysisDataKey)
         if (rhs != null)
@@ -359,7 +366,7 @@ object LogikaCheckAction {
           if (LogikaConfigurable.underwave) {
             (gutterErrorIcon, new TextAttributes(null, null, errorColor, EffectType.WAVE_UNDERSCORE, Font.PLAIN))
           } else {
-            (null, new TextAttributes(null, errorColor, null, null, Font.PLAIN))
+            (gutterErrorIcon, new TextAttributes(null, errorColor, null, null, Font.PLAIN))
           }
         errorAttr.setErrorStripeColor(errorColor)
         val warningColor = cs.getAttributes(TextAttributesKey.find("WARNING_ATTRIBUTES")).getErrorStripeColor
@@ -367,7 +374,7 @@ object LogikaCheckAction {
           if (LogikaConfigurable.underwave) {
             (gutterWarningIcon, new TextAttributes(null, null, warningColor, EffectType.WAVE_UNDERSCORE, Font.PLAIN))
           } else {
-            (null, new TextAttributes(null, warningColor, null, null, Font.PLAIN))
+            (gutterWarningIcon, new TextAttributes(null, warningColor, null, null, Font.PLAIN))
           }
         warningAttr.setErrorStripeColor(warningColor)
         val infoColor = cs.getAttributes(TextAttributesKey.find("TYPO")).getEffectColor
@@ -375,10 +382,18 @@ object LogikaCheckAction {
           if (LogikaConfigurable.underwave) {
             (gutterInfoIcon, new TextAttributes(null, null, infoColor, EffectType.WAVE_UNDERSCORE, Font.PLAIN))
           } else {
-            (null, new TextAttributes(null, infoColor, null, null, Font.PLAIN))
+            (gutterInfoIcon, new TextAttributes(null, infoColor, null, null, Font.PLAIN))
           }
+        val sb = new StringBuilder
         for (lTag <- lTags) (lTag: @unchecked) match {
           case tag: UriTag with LocationInfoTag with MessageTag with KindTag with SeverityTag =>
+            sb.append('[')
+            sb.append(tag.lineBegin)
+            sb.append(", ")
+            sb.append(tag.columnBegin)
+            sb.append("] ")
+            sb.append(tag.message)
+            sb.append('\n')
             val (ta, icon, isLine) = tag match {
               case _: InfoTag =>
                 tag.kind match {
@@ -442,6 +457,12 @@ object LogikaCheckAction {
               case _: IllegalArgumentException =>
             }
         }
+        Option(SireumToolWindowFactory.windows.get(project)).
+          foreach(f => {
+            f.logika.logikaTextArea.setFont(
+              editor.getColorsScheme.getFont(EditorFontType.PLAIN))
+            f.logika.logikaTextArea.setText(sb.toString)
+          })
         editor.putUserData(analysisDataKey, rhs)
       }
     })

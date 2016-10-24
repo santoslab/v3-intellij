@@ -387,13 +387,17 @@ object LogikaCheckAction {
         val sb = new StringBuilder
         for (lTag <- lTags) (lTag: @unchecked) match {
           case tag: UriTag with LocationInfoTag with MessageTag with KindTag with SeverityTag =>
-            sb.append('[')
-            sb.append(tag.lineBegin)
-            sb.append(", ")
-            sb.append(tag.columnBegin)
-            sb.append("] ")
-            sb.append(tag.message)
-            sb.append('\n')
+            tag match {
+              case _: ErrorTag | _: WarningTag =>
+                sb.append('[')
+                sb.append(tag.lineBegin)
+                sb.append(", ")
+                sb.append(tag.columnBegin)
+                sb.append("] ")
+                sb.append(tag.message)
+                sb.append('\n')
+              case _ =>
+            }
             val (ta, icon, isLine) = tag match {
               case _: InfoTag =>
                 tag.kind match {

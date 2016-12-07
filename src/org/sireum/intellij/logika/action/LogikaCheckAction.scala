@@ -212,7 +212,7 @@ object LogikaCheckAction {
     }
     if (isBackground) {
       this.synchronized {
-        request = Some(Request(t, requestId, project, editor, f))
+        request = Some(Request(t, requestId, project, editor, f _))
       }
     } else {
       editorMap.synchronized {

@@ -5,9 +5,9 @@
     <option name="deprecationWarnings" value="true" />
     <option name="uncheckedWarnings" value="true" />
     <option name="featureWarnings" value="true" />
-    <option name="optimiseBytecode" value="true" />
     <parameters>
-      <parameter value="–target:jvm-1.6" />
+      <parameter value="–target:jvm-1.8" />
+      <parameter value="-opt:l:classpath" />
     </parameters>
   </component>
 </project>

@@ -37,19 +37,20 @@ import org.sireum.intellij.Util
 import org.sireum.util._
 
 object Lexer {
-  final val syntaxHighlightingDataKey = new Key[ISeq[RangeHighlighter]]("Logika Highlighting Data")
-  final val propJusts = Set("premise", "andi", "ande1", "ande2", "ori1",
+  final val syntaxHighlightingDataKey: Key[ISeq[RangeHighlighter]] =
+    new Key[ISeq[RangeHighlighter]]("Logika Highlighting Data")
+  final val propJusts: ISet[String] = Set("premise", "andi", "ande1", "ande2", "ori1",
     "Vi1", "ori2", "Vi2", "ore", "Ve", "impliesi", "impliese", "noti",
     "negi", "note", "nege", "bottome", "falsee", "pbc")
-  final val predJusts = Set("foralli", "alli", "Ai", "foralle", "alle", "Ae",
+  final val predJusts: ISet[String] = Set("foralli", "alli", "Ai", "foralle", "alle", "Ae",
     "existsi", "somei", "Ei", "existse", "somee", "Ee")
-  final val progJusts = Set("subst1", "subst2", "algebra", "auto")
-  final val propOps = Set("not", "neg", "and", "xor", "or", "V", "implies")
-  final val predOps = Set("forall", "all", "A", "exists", "some", "E")
-  final val progOps = Set("*", "/", "%", "+", "-", "+:", ":+", "<", "<=",
+  final val progJusts: ISet[String] = Set("subst1", "subst2", "algebra", "auto")
+  final val propOps: ISet[String] = Set("not", "neg", "and", "xor", "or", "V", "implies")
+  final val predOps: ISet[String] = Set("forall", "all", "A", "exists", "some", "E")
+  final val progOps: ISet[String] = Set("*", "/", "%", "+", "-", "+:", ":+", "<", "<=",
     ">", ">=", "=", "==", "!=", "≤", "≥", "≠", "|^", "<<", ">>", ">>>")
-  final val justs = propJusts ++ predJusts ++ progJusts
-  final val types = Set(
+  final val justs: ISet[String] = propJusts ++ predJusts ++ progJusts
+  final val types: ISet[String] = Set(
     "B",
     "Z", "Z8", "Z16", "Z32", "Z64",
     "N", "N8", "N16", "N32", "N64",
@@ -62,13 +63,13 @@ object Lexer {
     "S8S", "S16S", "S32S", "S64S",
     "U8S", "U16S", "U32S", "U64S",
     "RS", "F32S", "F64S")
-  final val constants = Set("true", "T", "⊤", "false", "F")
-  final val constantJusts = Set("_|_", "⊥")
-  final val andJustFollow = Set("i", "e1", "e2")
-  final val orJustFollow = Set("i1", "i2", "e")
-  final val propIeJustFirst = Set("->", "→", "!", "~", "¬")
-  final val ieJustFollow = Set("i", "e")
-  final val keywords = Set("abstract", "case", "catch", "class", "def",
+  final val constants: ISet[String] = Set("true", "T", "⊤", "false", "F")
+  final val constantJusts: ISet[String] = Set("_|_", "⊥")
+  final val andJustFollow: ISet[String] = Set("i", "e1", "e2")
+  final val orJustFollow: ISet[String] = Set("i1", "i2", "e")
+  final val propIeJustFirst: ISet[String] = Set("->", "→", "!", "~", "¬")
+  final val ieJustFollow: ISet[String] = Set("i", "e")
+  final val keywords: ISet[String] = Set("abstract", "case", "catch", "class", "def",
     "do", "else", "extends", "final", "finally", "for", "forSome",
     "if", "implicit", "import", "lazy", "macro", "match", "new",
     "null", "object", "override", "package", "private",
@@ -117,8 +118,8 @@ object Lexer {
     val lexer = new Antlr4LogikaLexer(inputStream)
 
     val tokens: CSeq[Token] = {
-      import scala.collection.JavaConversions._
-      lexer.getAllTokens
+      import scala.collection.JavaConverters._
+      lexer.getAllTokens.asScala
     }
     val size = tokens.size
     val isProgramming = tokens.exists(_.getText == "import")

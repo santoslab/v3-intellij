@@ -8,22 +8,53 @@
     <properties/>
     <border type="none"/>
     <children>
-      <scrollpane id="69042" binding="logikaToolWindowScrollPane">
+      <splitpane id="b6933" binding="logikaToolSplitPane">
         <constraints>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+            <preferred-size width="200" height="200"/>
+          </grid>
         </constraints>
-        <properties/>
+        <properties>
+          <dividerLocation value="387"/>
+          <dividerSize value="3"/>
+          <oneTouchExpandable value="false"/>
+          <orientation value="0"/>
+        </properties>
         <border type="none"/>
         <children>
-          <component id="8ec6c" class="javax.swing.JTextArea" binding="logikaTextArea">
-            <constraints/>
-            <properties>
-              <editable value="false"/>
-              <font/>
-            </properties>
-          </component>
+          <scrollpane id="69042" binding="logikaToolTextScrollPane">
+            <constraints>
+              <splitpane position="right"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="8ec6c" class="javax.swing.JTextArea" binding="logikaTextArea">
+                <constraints/>
+                <properties>
+                  <editable value="false"/>
+                  <font/>
+                </properties>
+              </component>
+            </children>
+          </scrollpane>
+          <scrollpane id="c664a" binding="logikaToolListScrollPane">
+            <constraints>
+              <splitpane position="left"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="fa6da" class="javax.swing.JList" binding="logikaList">
+                <constraints/>
+                <properties>
+                  <selectionMode value="0"/>
+                </properties>
+              </component>
+            </children>
+          </scrollpane>
         </children>
-      </scrollpane>
+      </splitpane>
     </children>
   </grid>
 </form>

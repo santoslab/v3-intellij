@@ -29,6 +29,9 @@ import javax.swing.*;
 
 public class LogikaToolWindowForm {
     public JPanel logikaToolWindowPanel;
-    protected JScrollPane logikaToolWindowScrollPane;
+    private JScrollPane logikaToolTextScrollPane;
     public JTextArea logikaTextArea;
+    private JScrollPane logikaToolListScrollPane;
+    public JList<Object> logikaList;
+    public JSplitPane logikaToolSplitPane;
 }

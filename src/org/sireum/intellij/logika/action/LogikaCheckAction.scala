@@ -485,7 +485,6 @@ object LogikaCheckAction {
           } else {
             (gutterInfoIcon, new TextAttributes(null, infoColor, null, null, Font.PLAIN))
           }
-        val checkSatAttr = new TextAttributes(null, null, warningColor, null, Font.PLAIN)
         val layer = 1000000
         val tooltipSep = "<hr>"
         val listModel = new DefaultListModel[Object]()
@@ -524,7 +523,7 @@ object LogikaCheckAction {
           if (ris.warning.nonEmpty) consoleReportItems(ris.warning, line, warningIcon, warningAttr, warningColor)
           if (ris.info.nonEmpty) consoleReportItems(ris.info, line, infoIcon, infoAttr, infoColor)
           if (ris.checksat.nonEmpty) {
-            val rhLine = mm.addLineHighlighter(line - 1, layer, checkSatAttr)
+            val rhLine = mm.addLineHighlighter(line - 1, layer, null)
             rhLine.setThinErrorStripeMark(false)
             rhLine.setGutterIconRenderer(gutterIconRenderer(ris.checksat.map(_.message).mkString(tooltipSep),
               warningIcon, null))

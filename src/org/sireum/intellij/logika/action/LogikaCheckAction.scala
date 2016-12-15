@@ -37,11 +37,12 @@ import com.intellij.openapi.actionSystem._
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.markup._
-import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.{FileEditorManager, OpenFileDescriptor}
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.popup.{Balloon, JBPopupFactory}
 import com.intellij.openapi.util._
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.StatusBarWidget.{IconPresentation, PlatformType, WidgetPresentation}
 import com.intellij.openapi.wm.impl.ToolWindowImpl
 import com.intellij.openapi.wm.{StatusBar, StatusBarWidget, WindowManager}
@@ -73,7 +74,7 @@ object LogikaCheckAction {
   val gutterSummoningIcon: Icon = IconLoader.getIcon("/logika/icon/logika-gutter-summoning.png")
   val verifiedInfoIcon: Icon = IconLoader.getIcon("/logika/icon/logika-verified-info.png")
   val queue = new LinkedBlockingQueue[String]()
-  val editorMap: MMap[String, (Project, Editor)] = mmapEmpty
+  val editorMap: MMap[String, (Project, VirtualFile, Editor)] = mmapEmpty
   val logikaKey = new Key[EditorEnabled.type]("Logika")
   val analysisDataKey = new Key[ISeq[RangeHighlighter]]("Logika Analysis Data")
   val statusKey = new Key[Boolean]("Logika Analysis Status")
@@ -87,7 +88,7 @@ object LogikaCheckAction {
   val tooltipDarculaBgColor: Color = new Color(0x5c, 0x5c, 0x42)
 
   final case class Request(time: Long, requestId: String,
-                           project: Project, editor: Editor,
+                           project: Project, file: VirtualFile, editor: Editor,
                            msgGen: () => String)
 
   def init(p: Project): Unit = {
@@ -164,7 +165,7 @@ object LogikaCheckAction {
                   if (System.currentTimeMillis - r.time > LogikaConfigurable.idle) {
                     request = None
                     editorMap.synchronized {
-                      editorMap(r.requestId) = (r.project, r.editor)
+                      editorMap(r.requestId) = (r.project, r.file, r.editor)
                     }
                     queue.add(r.msgGen())
                   }
@@ -184,8 +185,8 @@ object LogikaCheckAction {
   def isEnabled(editor: Editor): Boolean =
     EditorEnabled == editor.getUserData(logikaKey)
 
-  def analyze(project: Project, editor: Editor, isBackground: Boolean): Unit = {
-    if (!isEnabled(editor)) return
+  def analyze(project: Project, file: VirtualFile, editor: Editor, isBackground: Boolean): Unit = {
+    if (editor.isDisposed || !isEnabled(editor)) return
     if (LogikaConfigurable.syntaxHighlighting)
       ApplicationManager.getApplication.invokeLater(
         (() => Lexer.addSyntaxHighlighter(project, editor)): Runnable,
@@ -221,7 +222,7 @@ object LogikaCheckAction {
 
     if (isBackground) {
       this.synchronized {
-        request = Some(Request(t, requestId, project, editor, f _))
+        request = Some(Request(t, requestId, project, file, editor, f _))
       }
     } else {
       editorMap.synchronized {
@@ -233,20 +234,20 @@ object LogikaCheckAction {
           }
           request = None
         }
-        editorMap(requestId) = (project, editor)
+        editorMap(requestId) = (project, file, editor)
       }
       queue.add(f)
     }
   }
 
 
-  def enableEditor(project: Project, editor: Editor): Unit = {
+  def enableEditor(project: Project, file: VirtualFile, editor: Editor): Unit = {
     if (editor.getUserData(logikaKey) != null) return
     editor.putUserData(logikaKey, EditorEnabled)
     editor.getDocument.addDocumentListener(new DocumentListener {
       override def documentChanged(event: DocumentEvent): Unit = {
         if (LogikaConfigurable.syntaxHighlighting || LogikaConfigurable.backgroundAnalysis)
-          analyze(project, editor, isBackground = true)
+          analyze(project, file, editor, isBackground = true)
       }
 
       override def beforeDocumentChange(event: DocumentEvent): Unit = {}
@@ -309,13 +310,13 @@ object LogikaCheckAction {
     })
   }
 
-  def editorOpened(project: Project, editor: Editor): Unit = {
+  def editorOpened(project: Project, file: VirtualFile, editor: Editor): Unit = {
     val ext = Util.getFileExt(project)
     if (!LogikaConfigurable.allFileExts.contains(ext)) return
     if (LogikaFileType.extensions.contains(ext)) {
-      enableEditor(project, editor)
+      enableEditor(project, file, editor)
       editor.putUserData(statusKey, false)
-      analyze(project, editor, isBackground = true)
+      analyze(project, file, editor, isBackground = true)
     }
   }
 
@@ -368,8 +369,7 @@ object LogikaCheckAction {
 
   private sealed trait ReportItem
 
-  private final case class ConsoleReportItem(fileResourceUri: FileResourceUri,
-                                             line: PosInteger,
+  private final case class ConsoleReportItem(line: PosInteger,
                                              column: PosInteger,
                                              offset: Natural,
                                              length: Natural,
@@ -382,6 +382,7 @@ object LogikaCheckAction {
   private final case class HintReportItem(message: String) extends ReportItem
 
   private final case class SummoningReportItem(messageFirstLine: String,
+                                               offset: Natural,
                                                message: String) extends ReportItem {
     override def toString: String = messageFirstLine
   }
@@ -401,19 +402,19 @@ object LogikaCheckAction {
         val ris = reportItemMap.getOrElseUpdate(tag.lineBegin, ReportItems())
         tag match {
           case _: ErrorTag =>
-            ris.error += ConsoleReportItem(tag.uri, tag.lineBegin, tag.columnBegin, tag.offset, tag.length, tag.message)
+            ris.error += ConsoleReportItem(tag.lineBegin, tag.columnBegin, tag.offset, tag.length, tag.message)
           case _: WarningTag if tag.kind == "checksat" =>
             ris.checksat += CheckSatReportItem(tag.message)
           case _: WarningTag =>
-            ris.warning += ConsoleReportItem(tag.uri, tag.lineBegin, tag.columnBegin, tag.offset, tag.length, tag.message)
+            ris.warning += ConsoleReportItem(tag.lineBegin, tag.columnBegin, tag.offset, tag.length, tag.message)
           case _: InfoTag if tag.kind == "hint" =>
             ris.hint = Some(HintReportItem(tag.message))
           case _: InfoTag if tag.kind == "summoning" =>
             val firstLine = tag.message.substring(tag.message.indexOf(';') + 1,
               tag.message.indexOf('\n')).trim
-            ris.summoning += SummoningReportItem(firstLine, tag.message)
+            ris.summoning += SummoningReportItem(firstLine, tag.offset, tag.message)
           case _: InfoTag =>
-            ris.info += ConsoleReportItem(tag.uri, tag.lineBegin, tag.columnBegin, tag.offset, tag.length, tag.message)
+            ris.info += ConsoleReportItem(tag.lineBegin, tag.columnBegin, tag.offset, tag.length, tag.message)
         }
     }
 
@@ -494,7 +495,7 @@ object LogikaCheckAction {
         notifyHelper(None, None, isBackground = false, tags)
         return
       }
-      val (project, editor) = editorMap.synchronized {
+      val (project, file, editor) = editorMap.synchronized {
         editorMap.get(r.requestId) match {
           case Some(pe) =>
             editorMap -= r.requestId
@@ -662,7 +663,11 @@ object LogikaCheckAction {
                   f.logika.logikaToolSplitPane.setDividerLocation(dividerWeight)
                   f.logika.logikaTextArea.setText(sri.message)
                   f.logika.logikaTextArea.setCaretPosition(0)
-                case _ =>
+                  FileEditorManager.getInstance(project).openTextEditor(
+                    new OpenFileDescriptor(project, file, sri.offset), true)
+                case cri: ConsoleReportItem if !editor.isDisposed =>
+                  FileEditorManager.getInstance(project).openTextEditor(
+                    new OpenFileDescriptor(project, file, cri.offset), true)
               }
           })
           f.logika.logikaTextArea.setText("")
@@ -693,9 +698,10 @@ private class LogikaCheckAction extends LogikaOnlyAction {
     val project = e.getProject
     val editor = FileEditorManager.
       getInstance(project).getSelectedTextEditor
+    val file = e.getData[VirtualFile](CommonDataKeys.VIRTUAL_FILE)
     if (editor == null) return
-    enableEditor(project, editor)
-    analyze(project, editor, isBackground = false)
+    enableEditor(project, file, editor)
+    analyze(project, file, editor, isBackground = false)
     e.getPresentation.setEnabled(true)
   }
 }

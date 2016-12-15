@@ -51,7 +51,7 @@ class SireumProjectComponent(project: Project) extends ProjectComponent {
           override def fileOpened(source: FileEditorManager,
                                   file: VirtualFile): Unit = {
             val editor = source.getSelectedTextEditor
-            LogikaCheckAction.editorOpened(project, editor)
+            LogikaCheckAction.editorOpened(project, file, editor)
           }
 
           override def

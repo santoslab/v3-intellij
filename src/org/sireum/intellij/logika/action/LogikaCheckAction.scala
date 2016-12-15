@@ -447,22 +447,40 @@ object LogikaCheckAction {
 
   def toASCII(message: String): String = {
     val sb = new StringBuilder
-    for (c <- message) c match {
-      case '⊢' => sb.append("|-")
-      case '∧' => sb.append("^")
-      case '∨' => sb.append(" V ")
-      case '¬' => sb.append("~")
-      case '→' => sb.append("->")
-      case '∀' => sb.append(" A ")
-      case '∃' => sb.append(" E ")
-      case '⊤' => sb.append(" T ")
-      case '⊥' => sb.append("_|_")
-      case '≤' => sb.append("<=")
-      case '≥' => sb.append(">=")
-      case '≠' => sb.append("!=")
-      case _ => sb.append(c)
+    var i = 0
+    val len = message.length
+    while (i < len) {
+      val c = message(i)
+
+      def isPrevWhitespace =
+        if (i - 1 >= 0) message(i - 1).isWhitespace else true
+
+      def isNextWhitespace =
+        if (i + 1 < len) message(i + 1).isWhitespace else true
+
+      def appendWs(c: Char) = {
+        if (!isPrevWhitespace) sb.append(' ')
+        sb.append(c)
+        if (!isNextWhitespace) sb.append(' ')
+      }
+
+      c match {
+        case '⊢' => sb.append("|-")
+        case '∧' => sb.append('^')
+        case '∨' => appendWs('V')
+        case '¬' => sb.append('~')
+        case '→' => sb.append("->")
+        case '∀' => appendWs('A')
+        case '∃' => appendWs('E')
+        case '⊤' => appendWs('T')
+        case '⊥' => sb.append("_|_")
+        case '≤' => sb.append("<=")
+        case '≥' => sb.append(">=")
+        case '≠' => sb.append("!=")
+        case _ => sb.append(c)
+      }
+      i += 1
     }
-    sb.replaceAllLiterally("  ", " ")
     sb.toString
   }
 

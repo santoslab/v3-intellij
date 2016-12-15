@@ -40,11 +40,14 @@ import com.intellij.openapi.editor.markup._
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.ui.popup.{Balloon, JBPopupFactory}
 import com.intellij.openapi.util._
 import com.intellij.openapi.wm.StatusBarWidget.{IconPresentation, PlatformType, WidgetPresentation}
 import com.intellij.openapi.wm.impl.ToolWindowImpl
 import com.intellij.openapi.wm.{StatusBar, StatusBarWidget, WindowManager}
+import com.intellij.ui.awt.RelativePoint
 import com.intellij.util.Consumer
+import com.intellij.util.ui.UIUtil
 import org.sireum.intellij.{SireumApplicationComponent, SireumToolWindowFactory, Util}
 import org.sireum.intellij.logika.{LogikaConfigurable, LogikaFileType}
 import org.sireum.intellij.logika.lexer.Lexer
@@ -78,6 +81,10 @@ object LogikaCheckAction {
   var processInit: Option[scala.sys.process.Process] = None
   var terminated = false
   var dividerWeight: Double = .2
+  var tooltipMessageOpt: Option[String] = None
+  var tooltipBalloonOpt: Option[Balloon] = None
+  val tooltipDefaultBgColor: Color = new Color(0xff, 0xff, 0xcc)
+  val tooltipDarculaBgColor: Color = new Color(0x5c, 0x5c, 0x42)
 
   final case class Request(time: Long, requestId: String,
                            project: Project, editor: Editor,
@@ -232,6 +239,7 @@ object LogikaCheckAction {
     }
   }
 
+
   def enableEditor(project: Project, editor: Editor): Unit = {
     if (editor.getUserData(logikaKey) != null) return
     editor.putUserData(logikaKey, EditorEnabled)
@@ -243,26 +251,62 @@ object LogikaCheckAction {
 
       override def beforeDocumentChange(event: DocumentEvent): Unit = {}
     })
-    //    editor.addEditorMouseMotionListener(new EditorMouseMotionListener {
-    //      override def mouseMoved(e: EditorMouseEvent): Unit = {
-    //        if (!EditorMouseEventArea.EDITING_AREA.equals(e.getArea))
-    //          return
-    //        val rhs = editor.getUserData(analysisDataKey)
-    //        if (rhs == null) return
-    //        val component = editor.getContentComponent
-    //        val point = e.getMouseEvent.getPoint
-    //        val pos = editor.xyToLogicalPosition(point)
-    //        val offset = editor.logicalPositionToOffset(pos)
-    //        for (rh <- rhs if rh.getErrorStripeTooltip != null)
-    //          if (rh.getStartOffset <= offset && offset <= rh.getEndOffset) {
-    //            component.setToolTipText(rh.getErrorStripeTooltip.toString)
-    //            return
-    //          }
-    //        component.setToolTipText(null)
-    //      }
-    //
-    //      override def mouseDragged(e: EditorMouseEvent): Unit = {}
-    //    })
+    editor.addEditorMouseMotionListener(new EditorMouseMotionListener {
+      override def mouseMoved(e: EditorMouseEvent): Unit = {
+        if (!EditorMouseEventArea.EDITING_AREA.equals(e.getArea))
+          return
+        val rhs = editor.getUserData(analysisDataKey)
+        if (rhs == null) return
+        val component = editor.getContentComponent
+        val point = e.getMouseEvent.getPoint
+        val pos = editor.xyToLogicalPosition(point)
+        val offset = editor.logicalPositionToOffset(pos)
+        editor.synchronized {
+          tooltipMessageOpt match {
+            case Some(_) => tooltipMessageOpt = None
+            case _ =>
+          }
+          tooltipBalloonOpt match {
+            case Some(b) => b.hide(); b.dispose()
+            case _ =>
+          }
+        }
+        var msgs: IVector[String] = ivectorEmpty
+        for (rh <- rhs if rh.getErrorStripeTooltip != null)
+          if (rh.getStartOffset <= offset && offset <= rh.getEndOffset) {
+            msgs :+= rh.getErrorStripeTooltip.toString
+          }
+        if (msgs.nonEmpty) {
+          editor.synchronized {
+            tooltipMessageOpt = Some(msgs.mkString("<hr>"))
+          }
+          new Thread() {
+            override def run(): Unit = {
+              val tbo = editor.synchronized(tooltipMessageOpt)
+              Thread.sleep(500)
+              editor.synchronized {
+                if (tbo eq tooltipMessageOpt) tooltipMessageOpt match {
+                  case Some(msg) =>
+                    val color = if (UIUtil.isUnderDarcula) tooltipDarculaBgColor else tooltipDefaultBgColor
+                    val builder = JBPopupFactory.getInstance().createHtmlTextBalloonBuilder(
+                      msg, null, color, null)
+                    val b = builder.createBalloon()
+                    tooltipBalloonOpt = Some(b)
+                    ApplicationManager.getApplication.invokeLater(
+                      { () =>
+                        b.show(new RelativePoint(component, point), Balloon.Position.below)
+                      }: Runnable,
+                      ((_: Any) => b.isDisposed): Condition[Any])
+                  case _ =>
+                }
+              }
+            }
+          }.start()
+        }
+      }
+
+      override def mouseDragged(e: EditorMouseEvent): Unit = {}
+    })
   }
 
   def editorOpened(project: Project, editor: Editor): Unit = {

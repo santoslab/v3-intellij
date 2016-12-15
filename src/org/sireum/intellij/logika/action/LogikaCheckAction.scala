@@ -451,7 +451,7 @@ object LogikaCheckAction {
       case '⊢' => sb.append("|-")
       case '∧' => sb.append("^")
       case '∨' => sb.append(" V ")
-      case '¬' => sb.append("¬")
+      case '¬' => sb.append("~")
       case '→' => sb.append("->")
       case '∀' => sb.append(" A ")
       case '∃' => sb.append(" E ")

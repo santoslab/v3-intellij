@@ -243,26 +243,26 @@ object LogikaCheckAction {
 
       override def beforeDocumentChange(event: DocumentEvent): Unit = {}
     })
-    editor.addEditorMouseMotionListener(new EditorMouseMotionListener {
-      override def mouseMoved(e: EditorMouseEvent): Unit = {
-        if (!EditorMouseEventArea.EDITING_AREA.equals(e.getArea))
-          return
-        val rhs = editor.getUserData(analysisDataKey)
-        if (rhs == null) return
-        val component = editor.getContentComponent
-        val point = e.getMouseEvent.getPoint
-        val pos = editor.xyToLogicalPosition(point)
-        val offset = editor.logicalPositionToOffset(pos)
-        for (rh <- rhs if rh.getErrorStripeTooltip != null)
-          if (rh.getStartOffset <= offset && offset <= rh.getEndOffset) {
-            component.setToolTipText(rh.getErrorStripeTooltip.toString)
-            return
-          }
-        component.setToolTipText(null)
-      }
-
-      override def mouseDragged(e: EditorMouseEvent): Unit = {}
-    })
+    //    editor.addEditorMouseMotionListener(new EditorMouseMotionListener {
+    //      override def mouseMoved(e: EditorMouseEvent): Unit = {
+    //        if (!EditorMouseEventArea.EDITING_AREA.equals(e.getArea))
+    //          return
+    //        val rhs = editor.getUserData(analysisDataKey)
+    //        if (rhs == null) return
+    //        val component = editor.getContentComponent
+    //        val point = e.getMouseEvent.getPoint
+    //        val pos = editor.xyToLogicalPosition(point)
+    //        val offset = editor.logicalPositionToOffset(pos)
+    //        for (rh <- rhs if rh.getErrorStripeTooltip != null)
+    //          if (rh.getStartOffset <= offset && offset <= rh.getEndOffset) {
+    //            component.setToolTipText(rh.getErrorStripeTooltip.toString)
+    //            return
+    //          }
+    //        component.setToolTipText(null)
+    //      }
+    //
+    //      override def mouseDragged(e: EditorMouseEvent): Unit = {}
+    //    })
   }
 
   def editorOpened(project: Project, editor: Editor): Unit = {

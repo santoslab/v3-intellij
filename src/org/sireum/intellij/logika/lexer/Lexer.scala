@@ -120,7 +120,7 @@ object Lexer {
 
     val tokens: CSeq[Token] = {
       import scala.collection.JavaConverters._
-      lexer.getAllTokens.asScala
+      lexer.getAllTokens.asScala.filter(_.getChannel != 2)
     }
     val size = tokens.size
     val isProgramming = tokens.exists(_.getText == "import")

@@ -626,7 +626,22 @@ object LogikaCheckAction {
                 f.logika.logikaTextArea.setFont(font)
                 tw.activate(() => {
                   f.logika.logikaList.setModel(summoningListModel)
-                  f.logika.logikaList.setSelectedIndex(0)
+                  var selection = 0
+                  var i = 0
+                  while (i < ris.summoning.size && selection == 0) {
+                    if (ris.summoning(i).messageFirstLine.contains("Invalid")) {
+                      selection = i
+                    }
+                    i += 1
+                  }
+                  i = 0
+                  while (i < ris.summoning.size && selection == 0) {
+                    if (ris.summoning(i).messageFirstLine.contains("Don't Know")) {
+                      selection = i
+                    }
+                    i += 1
+                  }
+                  f.logika.logikaList.setSelectedIndex(selection)
                 })
               })))
             rhs :+= rhLine

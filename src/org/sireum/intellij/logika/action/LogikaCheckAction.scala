@@ -660,7 +660,7 @@ object LogikaCheckAction {
 
 import LogikaCheckAction._
 
-private class LogikaCheckAction extends LogikaAction {
+private class LogikaCheckAction extends LogikaOnlyAction {
 
   // init
   {
@@ -682,11 +682,5 @@ private class LogikaCheckAction extends LogikaAction {
     enableEditor(project, editor)
     analyze(project, editor, isBackground = false)
     e.getPresentation.setEnabled(true)
-  }
-
-  final override def update(e: AnActionEvent): Unit = {
-    val project = e.getProject
-    e.getPresentation.setEnabledAndVisible(project != null &&
-      LogikaConfigurable.allFileExts.contains(Util.getFileExt(project)))
   }
 }

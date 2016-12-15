@@ -34,6 +34,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import org.antlr.v4.runtime.{ANTLRInputStream, Token}
 import org.sireum.intellij.Util
+import org.sireum.logika.parser._
 import org.sireum.util._
 
 object Lexer {

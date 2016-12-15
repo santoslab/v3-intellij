@@ -21,6 +21,7 @@ into IntelliJ 15.
    ```bash
    cd sireum-v3-intellij
    ln -s ../sireum-v3
+   ./setup.sh
    ```
 
 3. Follow the instructions for 

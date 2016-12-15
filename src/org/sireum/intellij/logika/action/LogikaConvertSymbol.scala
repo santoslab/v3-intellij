@@ -25,16 +25,56 @@
 
 package org.sireum.intellij.logika.action
 
-import com.intellij.openapi.actionSystem.{AnAction, AnActionEvent}
+import com.intellij.openapi.actionSystem.{ActionManager, AnActionEvent, Constraints, DefaultActionGroup}
+import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.fileEditor.FileEditorManager
 import org.sireum.intellij.Util
 import org.sireum.intellij.logika.LogikaConfigurable
+import org.sireum.logika.util.SymbolConverter
 
-trait LogikaAction extends AnAction
+abstract class LogikaConvertSymbol extends LogikaAction {
+  final val encodings: Set[String] = Set("UTF-8", "UTF8", "UTF-16", "UTF-32", "UTF_32")
 
-trait LogikaOnlyAction extends LogikaAction {
+  // init
+  {
+    val am = ActionManager.getInstance
+
+    val runGroup = am.getAction("SireumLogikaGroup").
+      asInstanceOf[DefaultActionGroup]
+    runGroup.addAction(this, Constraints.LAST)
+  }
+
+  def isAscii: Boolean
+
+  override def actionPerformed(e: AnActionEvent): Unit = {
+    val project = e.getProject
+    val editor = FileEditorManager.
+      getInstance(project).getSelectedTextEditor
+    if (editor == null) return
+    val document = editor.getDocument
+    val text = if (isAscii)
+      SymbolConverter.toASCII(document.getText)
+    else
+      SymbolConverter.toUnicode(document.getText)
+
+    WriteCommandAction.runWriteCommandAction(project,
+      (() => document.setText(text)): Runnable)
+  }
+
   override def update(e: AnActionEvent): Unit = {
     val project = e.getProject
-    e.getPresentation.setEnabledAndVisible(project != null &&
-      LogikaConfigurable.allFileExts.contains(Util.getFileExt(project)))
+    e.getPresentation.setEnabledAndVisible(
+      project != null &&
+        encodings.contains(System.getProperty("file.encoding")) &&
+        LogikaConfigurable.allFileExts.contains(Util.getFileExt(project)))
   }
 }
+
+final class LogikaConvertAscii extends LogikaConvertSymbol {
+  val isAscii: Boolean = true
+}
+
+final class LogikaConvertUnicode extends LogikaConvertSymbol {
+  val isAscii: Boolean = false
+}
+

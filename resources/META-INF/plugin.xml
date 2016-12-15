@@ -60,9 +60,11 @@
         <group id="SireumGroup" text="Sireum" popup="true">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </group>
+
         <group id="SireumLogikaGroup" text="Logika" popup="true">
             <add-to-group group-id="SireumGroup" anchor="last"/>
         </group>
+
         <group id="SireumLogikaSymbolGroup" text="Insert Symbols" popup="true">
             <add-to-group group-id="SireumLogikaGroup" anchor="last"/>
         </group>
@@ -72,6 +74,18 @@
                 description="Check Logika Proof">
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl L"/>
+        </action>
+
+        <action id="LogikaConvertAscii" class="org.sireum.intellij.logika.action.LogikaConvertAscii"
+                text="Convert to ASCII"
+                description="Convert all logic symbols to ASCII">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+
+        <action id="LogikaConvertUnicode" class="org.sireum.intellij.logika.action.LogikaConvertUnicode"
+                text="Convert to Unicode"
+                description="Convert all logic symbols to Unicode">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
         </action>
 
         <action id="LogikaInsertTop" class="org.sireum.intellij.logika.action.LogikaInsertTop"

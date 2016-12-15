@@ -310,6 +310,10 @@ object LogikaCheckAction {
     })
   }
 
+  def editorClosed(project: Project): Unit = {
+    resetSireumView(project)
+  }
+
   def editorOpened(project: Project, file: VirtualFile, editor: Editor): Unit = {
     val ext = Util.getFileExt(project)
     if (!LogikaConfigurable.allFileExts.contains(ext)) return
@@ -485,6 +489,18 @@ object LogikaCheckAction {
     sb.toString
   }
 
+  def resetSireumView(project: Project): Unit = {
+    sireumToolWindowFactory(project, f => {
+      val list = f.logika.logikaList
+      for (lsl <- list.getListSelectionListeners) {
+        list.removeListSelectionListener(lsl)
+      }
+      list.setModel(new DefaultListModel[Object]())
+      f.logika.logikaTextArea.setText("")
+      saveSetDividerLocation(f.logika.logikaToolSplitPane, 1.0)
+    })
+  }
+
   def processResult(r: Result): Unit =
     ApplicationManager.getApplication.invokeLater(() => analysisDataKey.synchronized {
       val tags = r.tags
@@ -505,6 +521,7 @@ object LogikaCheckAction {
             return
         }
       }
+      resetSireumView(project)
       if (!editor.isDisposed) {
         sireumToolWindowFactory(project, f => {
           f.logika.logikaTextArea.setFont(
@@ -663,11 +680,13 @@ object LogikaCheckAction {
                   f.logika.logikaToolSplitPane.setDividerLocation(dividerWeight)
                   f.logika.logikaTextArea.setText(sri.message)
                   f.logika.logikaTextArea.setCaretPosition(0)
-                  FileEditorManager.getInstance(project).openTextEditor(
-                    new OpenFileDescriptor(project, file, sri.offset), true)
-                case cri: ConsoleReportItem if !editor.isDisposed =>
-                  FileEditorManager.getInstance(project).openTextEditor(
-                    new OpenFileDescriptor(project, file, cri.offset), true)
+                  if (!editor.isDisposed)
+                    FileEditorManager.getInstance(project).openTextEditor(
+                      new OpenFileDescriptor(project, file, sri.offset), true)
+                case cri: ConsoleReportItem =>
+                  if (!editor.isDisposed)
+                    FileEditorManager.getInstance(project).openTextEditor(
+                      new OpenFileDescriptor(project, file, cri.offset), true)
               }
           })
           f.logika.logikaTextArea.setText("")

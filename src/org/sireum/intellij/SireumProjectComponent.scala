@@ -46,7 +46,9 @@ class SireumProjectComponent(project: Project) extends ProjectComponent {
       subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER,
         new FileEditorManagerListener {
           override def fileClosed(source: FileEditorManager,
-                                  file: VirtualFile): Unit = {}
+                                  file: VirtualFile): Unit = {
+            LogikaCheckAction.editorClosed(project)
+          }
 
           override def fileOpened(source: FileEditorManager,
                                   file: VirtualFile): Unit = {

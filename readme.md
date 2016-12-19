@@ -3,8 +3,8 @@
 This plugin integrates 
 [Sireum](https://github.com/santoslab/sireum-v3) 
 tools such as the 
-[Logika natural deduction proof checker for propositional, predicate, and programming logic](https://github.com/santoslab/sireum-v3/tree/master/logika)
-into IntelliJ 15.
+[Logika program verifier and natural deduction proof checker for propositional, predicate, and programming logic](https://github.com/santoslab/sireum-v3/tree/master/logika)
+into IntelliJ 15 (or above).
 
 ## Setup, Build, and Install
 

@@ -30,12 +30,13 @@ import java.util.concurrent.BlockingQueue
 
 import com.intellij.ide.plugins.PluginManager
 import com.intellij.ide.util.PropertiesComponent
-import com.intellij.notification.{NotificationType, Notification}
+import com.intellij.notification.{Notification, NotificationType}
 import com.intellij.openapi.components._
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.fileChooser._
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.util.SystemInfo
 import org.sireum.intellij.logika.LogikaConfigurable
 import org.sireum.util._
 import org.sireum.util.jvm.Exec
@@ -60,6 +61,16 @@ object SireumApplicationComponent {
     if (sireumHomeOpt.isEmpty) {
       val env = System.getenv("SIREUM_HOME")
       sireumHomeOpt = checkSireumDir(env)
+      if (sireumHomeOpt.isEmpty && SystemInfo.isWindows)
+        sireumHomeOpt = checkSireumDir("C:\\Sireum")
+      if (sireumHomeOpt.isEmpty && SystemInfo.isMac) {
+        val appResources = "/Applications/Sireum.app/Contents/Resources/sireum-v3"
+        sireumHomeOpt = checkSireumDir(appResources)
+        if (sireumHomeOpt.isEmpty)
+          sireumHomeOpt = checkSireumDir(System.getProperty("user.home") + appResources)
+      }
+      if (sireumHomeOpt.isEmpty && SystemInfo.isLinux)
+        sireumHomeOpt = checkSireumDir(System.getProperty("user.home") + "/Applications/Sireum")
       if (sireumHomeOpt.isEmpty) {
         browseSireumHome(project).foreach(p =>
           sireumHomeOpt = checkSireumDir(p))
@@ -76,7 +87,7 @@ object SireumApplicationComponent {
 
   private def isSource(homeDir: File): Boolean =
     currentPluginVersion.endsWith("-SNAPSHOT") ||
-    new File(homeDir, "bin/detect-build.sh").exists
+      new File(homeDir, "bin/detect-build.sh").exists
 
   private def checkSireumInSync(homeDir: File): Unit = {
     if (currentPluginVersion.endsWith("-SNAPSHOT")) {
@@ -87,9 +98,9 @@ object SireumApplicationComponent {
     if (currentPluginVersion != pluginVersion && isSource(homeDir)) {
       Messages.showInfoMessage(
         s"""The Sireum IntelliJ plugin has been updated.
-            |Please update Sireum through the command-line:
-            |(1) do a git pull, and
-            |(2) run Sireum again.""".stripMargin,
+           |Please update Sireum through the command-line:
+           |(1) do a git pull, and
+           |(2) run Sireum again.""".stripMargin,
         "Sireum May Need Updating")
     }
     pluginVersion = currentPluginVersion
@@ -119,7 +130,7 @@ object SireumApplicationComponent {
 
   def sireumInvalid(path: String): String =
     s"""Could not confirm a working Sireum installation in $path (with the specified VM arguments and environment variables in the settings).
-        |Make sure to run Sireum at least once from the command-line.""".stripMargin
+       |Make sure to run Sireum at least once from the command-line.""".stripMargin
 
   def runSireum(project: Project, input: Option[String], args: String*): Option[String] =
     getSireumHome(project) match {
@@ -174,7 +185,7 @@ object SireumApplicationComponent {
     else new Exec().run(0,
       (javaPath +: vmArgs) ++ Seq("-Dfile.encoding=UTF-8", "-jar",
         sireumJarPath) ++ args,
-      input, envVars.toSeq :+("SIREUM_HOME", path): _*) match {
+      input, envVars.toSeq :+ ("SIREUM_HOME", path): _*) match {
       case Exec.StringResult(s, _) => Some(s)
       case _ => None
     }

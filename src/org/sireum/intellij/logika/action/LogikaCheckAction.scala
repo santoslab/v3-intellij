@@ -501,6 +501,12 @@ object LogikaCheckAction {
     })
   }
 
+  def normalizeChars(font: Font, text: String): String = {
+    val isMeslo = font.getFontName.contains("Meslo")
+    if ((SystemInfo.isWindows || SystemInfo.isLinux) && !isMeslo) toASCII(text)
+    else text
+  }
+
   def processResult(r: Result): Unit =
     ApplicationManager.getApplication.invokeLater(() => analysisDataKey.synchronized {
       val tags = r.tags
@@ -617,14 +623,10 @@ object LogikaCheckAction {
                 gutterHintIcon, _ => sireumToolWindowFactory(project, f => {
                   val tw = f.toolWindow.asInstanceOf[ToolWindowImpl]
                   val font = editor.getColorsScheme.getFont(EditorFontType.PLAIN)
-                  val isMeslo = font.getFontName.contains("Meslo")
                   f.logika.logikaTextArea.setFont(font)
-                  val msg =
-                    if (SystemInfo.isWindows && !isMeslo) toASCII(hint.message)
-                    else hint.message
                   tw.activate(() => {
                     saveSetDividerLocation(f.logika.logikaToolSplitPane, 0.0)
-                    f.logika.logikaTextArea.setText(msg)
+                    f.logika.logikaTextArea.setText(normalizeChars(font, hint.message))
                     f.logika.logikaTextArea.setCaretPosition(0)
                   })
                 })
@@ -678,7 +680,8 @@ object LogikaCheckAction {
               list.getModel.getElementAt(i) match {
                 case sri: SummoningReportItem =>
                   f.logika.logikaToolSplitPane.setDividerLocation(dividerWeight)
-                  f.logika.logikaTextArea.setText(sri.message)
+                  val font = editor.getColorsScheme.getFont(EditorFontType.PLAIN)
+                  f.logika.logikaTextArea.setText(normalizeChars(font, sri.message))
                   f.logika.logikaTextArea.setCaretPosition(0)
                   if (!editor.isDisposed)
                     FileEditorManager.getInstance(project).openTextEditor(

@@ -253,6 +253,34 @@ class SireumApplicationComponent extends ApplicationComponent {
     SireumApplicationComponent.loadConfiguration()
     LogikaConfigurable.loadConfiguration()
 
+    val suffix = "options/notifications.xml"
+    Option(System.getProperty("org.sireum.ive")) match {
+      case Some(name) =>
+        val homeDir = new File(System.getProperty("user.home"))
+        val notificationFileOpt =
+          if (SystemInfo.isMac) {
+            val f = new File(homeDir, s"Library/Preferences/$name/$suffix")
+            if (f.exists) None else Some(f)
+          } else if (SystemInfo.isLinux || SystemInfo.isWindows) {
+            val f = new File(homeDir, s".$name/config/$suffix")
+            if (f.exists) None else Some(f)
+          } else None
+        for (f <- notificationFileOpt) try {
+          val fw = new java.io.FileWriter(f)
+          fw.write(
+            """<application>
+              |  <component name="NotificationConfiguration">
+              |    <notification groupId="Platform and Plugin Updates" displayType="STICKY_BALLOON" shouldLog="false" />
+              |  </component>
+              |</application>
+              |""".stripMargin)
+          fw.close()
+        } catch {
+          case _: Throwable =>
+        }
+      case _ =>
+    }
+
     SireumApplicationComponent.sireumHomeOpt match {
       case Some(homeDir) =>
         if (!isSource(homeDir)) {

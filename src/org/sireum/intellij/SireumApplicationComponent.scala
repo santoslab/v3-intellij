@@ -47,7 +47,7 @@ object SireumApplicationComponent {
   private val sireumVarArgsKey = sireumKey + "vmargs"
   private val sireumEnvVarsKey = sireumKey + "envvars"
   private val sireumPluginVersionKey = sireumKey + "plugin.version"
-  private val isDev: Boolean = "true" == System.getenv("org.sireum.ive.dev")
+  private val isDev: Boolean = "true" == System.getProperty("org.sireum.ive.dev")
 
   private lazy val currentPluginVersion =
     PluginManager.getPlugin(

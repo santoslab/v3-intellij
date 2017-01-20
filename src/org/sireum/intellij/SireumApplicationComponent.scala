@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2016, Robby, Kansas State University
+ Copyright (c) 2017, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -47,6 +47,8 @@ object SireumApplicationComponent {
   private val sireumVarArgsKey = sireumKey + "vmargs"
   private val sireumEnvVarsKey = sireumKey + "envvars"
   private val sireumPluginVersionKey = sireumKey + "plugin.version"
+  private val isDev: Boolean = "true" == System.getenv("org.sireum.ive.dev")
+
   private lazy val currentPluginVersion =
     PluginManager.getPlugin(
       PluginId.getId("org.sireum.intellij")).getVersion
@@ -90,7 +92,7 @@ object SireumApplicationComponent {
       new File(homeDir, "bin/detect-build.sh").exists
 
   private def checkSireumInSync(homeDir: File): Unit = {
-    if (currentPluginVersion.endsWith("-SNAPSHOT")) {
+    if (isDev || currentPluginVersion.endsWith("-SNAPSHOT")) {
       pluginVersion = ""
       return
     }
@@ -283,7 +285,7 @@ class SireumApplicationComponent extends ApplicationComponent {
 
     SireumApplicationComponent.sireumHomeOpt match {
       case Some(homeDir) =>
-        if (!isSource(homeDir)) {
+        if (!(isDev || isSource(homeDir))) {
           val reinstall = try {
             import org.sireum.util.jvm._
             val localVer = FileUtil.readFile(FileUtil.toUri(new File(homeDir, "bin/VER")))._1.trim

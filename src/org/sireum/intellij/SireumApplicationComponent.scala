@@ -48,6 +48,7 @@ object SireumApplicationComponent {
   private val sireumEnvVarsKey = sireumKey + "envvars"
   private val sireumPluginVersionKey = sireumKey + "plugin.version"
   private val isDev: Boolean = "true" == System.getProperty("org.sireum.ive.dev")
+  private val dev: String = if (isDev) "-dev" else ""
 
   private lazy val currentPluginVersion =
     PluginManager.getPlugin(
@@ -64,15 +65,15 @@ object SireumApplicationComponent {
       val env = System.getenv("SIREUM_HOME")
       sireumHomeOpt = checkSireumDir(env)
       if (sireumHomeOpt.isEmpty && SystemInfo.isWindows)
-        sireumHomeOpt = checkSireumDir("C:\\Sireum")
+        sireumHomeOpt = checkSireumDir("C:\\Sireum" + dev)
       if (sireumHomeOpt.isEmpty && SystemInfo.isMac) {
-        val appResources = "/Applications/Sireum.app/Contents/Resources/sireum-v3"
+        val appResources = s"/Applications/Sireum$dev.app/Contents/Resources/sireum-v3"
         sireumHomeOpt = checkSireumDir(appResources)
         if (sireumHomeOpt.isEmpty)
           sireumHomeOpt = checkSireumDir(System.getProperty("user.home") + appResources)
       }
       if (sireumHomeOpt.isEmpty && SystemInfo.isLinux)
-        sireumHomeOpt = checkSireumDir(System.getProperty("user.home") + "/Applications/Sireum")
+        sireumHomeOpt = checkSireumDir(System.getProperty("user.home") + "/Applications/Sireum" + dev)
       if (sireumHomeOpt.isEmpty) {
         browseSireumHome(project).foreach(p =>
           sireumHomeOpt = checkSireumDir(p))
@@ -92,7 +93,7 @@ object SireumApplicationComponent {
       new File(homeDir, "bin/detect-build.sh").exists
 
   private def checkSireumInSync(homeDir: File): Unit = {
-    if (isDev || currentPluginVersion.endsWith("-SNAPSHOT")) {
+    if (currentPluginVersion.contains("-SNAPSHOT")) {
       pluginVersion = ""
       return
     }
@@ -285,11 +286,11 @@ class SireumApplicationComponent extends ApplicationComponent {
 
     SireumApplicationComponent.sireumHomeOpt match {
       case Some(homeDir) =>
-        if (!(isDev || isSource(homeDir))) {
+        if (!isSource(homeDir)) {
           val reinstall = try {
             import org.sireum.util.jvm._
             val localVer = FileUtil.readFile(FileUtil.toUri(new File(homeDir, "bin/VER")))._1.trim
-            val onlineVer = scala.io.Source.fromURL("http://files.sireum.org/sireum-v3-VER").mkString.trim
+            val onlineVer = scala.io.Source.fromURL(s"http://files.sireum.org/sireum-v3$dev-VER").mkString.trim
             localVer != onlineVer
           } catch {
             case _: Throwable => false
@@ -299,7 +300,7 @@ class SireumApplicationComponent extends ApplicationComponent {
               override def run(): Unit = {
                 Thread.sleep(5000)
                 Util.notify(new Notification("Sireum Logika", "Sireum Update",
-                  "A newer Sireum version is available; please re-download/install.",
+                  s"A newer Sireum$dev version is available; please re-download/install.",
                   NotificationType.INFORMATION),
                   null, shouldExpire = false)
               }

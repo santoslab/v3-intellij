@@ -31,7 +31,13 @@ into IntelliJ 15 (or above).
 4. Follow the instructions for
    [setting up IntelliJ for plugin developments](http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/setting_up_environment.html).
    
-5. Open this local git repository in IntelliJ as a project, then right-click on the opened project folder inside 
-   IntelliJ and select "Prepare Plugin Module 'sireum-v3-intellij' For Deployment".
+5. Open this local git repository in IntelliJ as a project, then right-click on the opened project folder using 
+   IntelliJ.
+   
+6. Add [Scala plugin](https://plugins.jetbrains.com/idea/plugin/1347-scala)'s jars to the classpath of your 
+   IntelliJ Platform SDK 
+   (see [Plugin Dependencies](http://www.jetbrains.org/intellij/sdk/docs/basics/plugin_structure/plugin_dependencies.html)).
+   
+7. Right-click on the project folder and select "Prepare Plugin Module 'sireum-v3-intellij' For Deployment".
    
    This produces a plugin zip file that you can install in your IntelliJ instance.

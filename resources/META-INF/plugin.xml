@@ -26,7 +26,7 @@
 <idea-plugin version="2">
     <id>org.sireum.intellij</id>
     <name>Sireum v3</name>
-    <version>3.0.0-15-SNAPSHOT.1</version>
+    <version>3.0.0-15-SNAPSHOT.2</version>
     <vendor email="robby@santoslab.org" url="http://robby.santoslab.org">Robby, SAnToS Lab, Kansas State University
     </vendor>
 
@@ -43,7 +43,9 @@
     ]]>
     </change-notes>
 
-    <idea-version since-build="143.1184"/>
+    <idea-version since-build="163.11103"/>
+
+    <depends>org.intellij.scala</depends>
 
     <depends>com.intellij.modules.lang</depends>
 
@@ -55,6 +57,10 @@
                                  displayName="Logika" parentId="SireumConfigurable"/>
 
         <fileTypeFactory implementation="org.sireum.intellij.logika.LogikaFileTypeFactory"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="org.intellij.scala">
+        <syntheticMemberInjector implementation="org.sireum.intellij.logika.Injector"/>
     </extensions>
 
     <actions>

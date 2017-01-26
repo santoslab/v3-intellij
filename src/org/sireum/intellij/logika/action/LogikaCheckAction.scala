@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2016, Robby, Kansas State University
+ Copyright (c) 2017, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -399,7 +399,10 @@ object LogikaCheckAction {
                                        summoning: MArray[SummoningReportItem] = marrayEmpty)
 
   private def processLocationTags(tags: IVector[Tag]): MMap[PosInteger, ReportItems] = {
-    val reportItemMap: MMap[PosInteger, ReportItems] = scala.collection.mutable.TreeMap()
+    val reportItemMap: MMap[PosInteger, ReportItems] = {
+      import scala.collection.JavaConverters._
+      new java.util.TreeMap[PosInteger, ReportItems]().asScala
+    }
 
     for (tag <- tags) (tag: @unchecked) match {
       case tag: UriTag with LocationInfoTag with MessageTag with KindTag with SeverityTag =>

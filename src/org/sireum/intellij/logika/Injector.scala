@@ -28,9 +28,15 @@ package org.sireum.intellij.logika
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.ScTypeDefinition
 import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.typedef.SyntheticMembersInjector
 
+object Injector {
+  val recordAnnotations = Set("org.sireum.logika.record", "org.sireum.logika.irecord")
+}
+
+import Injector._
+
 class Injector extends SyntheticMembersInjector {
   override def injectFunctions(source: ScTypeDefinition): Seq[String] = {
-    if (source.getAnnotations().exists(_.getQualifiedName == "org.sireum.logika.record")) {
+    if (source.getAnnotations().exists(a => recordAnnotations.contains(a.getQualifiedName))) {
       Seq(s"override def clone: ${source.getName} = ???")
     } else Seq()
   }

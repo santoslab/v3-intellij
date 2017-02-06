@@ -36,8 +36,34 @@ import Injector._
 
 class Injector extends SyntheticMembersInjector {
   override def injectFunctions(source: ScTypeDefinition): Seq[String] = {
-    if (source.getAnnotations().exists(a => recordAnnotations.contains(a.getQualifiedName))) {
-      Seq(s"override def clone: ${source.getName} = ???")
+    if (source.isCase &&
+      source.getConstructors.length == 1 &&
+      source.getAnnotations().exists(a => recordAnnotations.contains(a.getQualifiedName))) {
+      val c = source.getConstructors.head
+      val params = c.getParameterList.getParameters
+      if (params.nonEmpty) {
+        val sb = new StringBuilder
+        sb.append("def clone(")
+        if (params.nonEmpty) {
+          sb.append(params.head.getName)
+          sb.append(": ")
+          sb.append(params.head.getType.getPresentableText)
+          sb.append(" = ")
+          sb.append(params.head.getName)
+          for (param <- params.tail) {
+            sb.append(", ")
+            sb.append(param.getName)
+            sb.append(": ")
+            sb.append(param.getType.getPresentableText)
+            sb.append(" = ")
+            sb.append(param.getName)
+          }
+        }
+        sb.append("): ")
+        sb.append(source.getName)
+        sb.append(" =  ???")
+        Seq(s"override def clone: ${source.getName} = ???", sb.toString)
+      } else Seq(s"override def clone: ${source.getName} = ???")
     } else Seq()
   }
 }

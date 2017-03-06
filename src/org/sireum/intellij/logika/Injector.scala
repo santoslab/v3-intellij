@@ -29,16 +29,24 @@ import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef.ScTypeDefinitio
 import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.typedef.SyntheticMembersInjector
 
 object Injector {
+  val enumAnnotation = "org.sireum.logika.enum"
   val recordAnnotations = Set("org.sireum.logika.record", "org.sireum.logika.irecord")
 }
 
 import Injector._
 
 class Injector extends SyntheticMembersInjector {
+  override def injectSupers(source: ScTypeDefinition): Seq[String] = {
+    if (source.isObject &&
+      source.getAnnotations().exists(a => enumAnnotation == a.getQualifiedName)) {
+      Seq("Enumeration")
+    } else Seq()
+  }
+
   override def injectFunctions(source: ScTypeDefinition): Seq[String] = {
     if (source.isCase &&
       source.getConstructors.length == 1 &&
-      source.getAnnotations().exists(a => recordAnnotations.contains(a.getQualifiedName))) {
+      source.getAnnotations.exists(a => recordAnnotations.contains(a.getQualifiedName))) {
       val c = source.getConstructors.head
       val params = c.getParameterList.getParameters
       if (params.nonEmpty) {

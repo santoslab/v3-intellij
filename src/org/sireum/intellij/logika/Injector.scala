@@ -51,7 +51,7 @@ class Injector extends SyntheticMembersInjector {
       val params = c.getParameterList.getParameters
       if (params.nonEmpty) {
         val sb = new StringBuilder
-        sb.append("def clone(")
+        sb.append("def apply(")
         if (params.nonEmpty) {
           sb.append(params.head.getName)
           sb.append(": ")

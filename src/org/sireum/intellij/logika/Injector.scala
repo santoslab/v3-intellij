@@ -38,9 +38,18 @@ import Injector._
 class Injector extends SyntheticMembersInjector {
   override def injectSupers(source: ScTypeDefinition): Seq[String] = {
     if (source.isObject &&
-      source.getAnnotations().exists(a => enumAnnotation == a.getQualifiedName)) {
+      source.getAnnotations().exists(a => enumAnnotation == a.getQualifiedName))
       Seq("Enumeration")
-    } else Seq()
+    else if (source.isCase &&
+      source.getConstructors.length == 1 &&
+      source.getAnnotations.exists(a => recordAnnotations.head == a.getQualifiedName))
+      Seq("org.sireum.logika._Clonable")
+    else if (source.isCase &&
+      source.getConstructors.length == 1 &&
+      source.getAnnotations.exists(a => recordAnnotations.head == a.getQualifiedName))
+      Seq("org.sireum.logika._Clonable", "org.sireum.logika._Immutable")
+    else
+      Seq()
   }
 
   override def injectFunctions(source: ScTypeDefinition): Seq[String] = {

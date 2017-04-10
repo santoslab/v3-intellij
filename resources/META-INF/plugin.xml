@@ -23,7 +23,7 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   -->
 
-<idea-plugin version="2">
+<idea-plugin>
     <id>org.sireum.intellij</id>
     <name>Sireum v3</name>
     <version>3.0.0-15-SNAPSHOT.2</version>
@@ -43,7 +43,7 @@
     ]]>
     </change-notes>
 
-    <idea-version since-build="163.11103"/>
+    <idea-version since-build="171.3780"/>
 
     <depends>org.intellij.scala</depends>
 
@@ -57,10 +57,6 @@
                                  displayName="Logika" parentId="SireumConfigurable"/>
 
         <fileTypeFactory implementation="org.sireum.intellij.logika.LogikaFileTypeFactory"/>
-    </extensions>
-
-    <extensions defaultExtensionNs="org.intellij.scala">
-        <syntheticMemberInjector implementation="org.sireum.intellij.logika.Injector"/>
     </extensions>
 
     <actions>

@@ -9,12 +9,17 @@
       <sourceFolder url="file://$MODULE_DIR$/sireum-v3/util/shared/src/main/scala" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/sireum-v3/util/jvm/src/main/scala" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/sireum-v3/logika/shared/src/main/scala" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sireum-v3/runtime/prelude/shared/src/main/scala" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sireum-v3/slang/shared/src/main/scala" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="org.antlr:antlr4-runtime:4.6" level="project" />
-    <orderEntry type="library" name="scala-sdk-2.11.7" level="project" />
-    <orderEntry type="library" name="com.lihaoyi:upickle_2.11:0.4.4" level="project" />
-    <orderEntry type="library" name="org.scala-lang.modules:scala-java8-compat_2.11:0.8.0" level="project" />
+    <orderEntry type="library" name="org.antlr:antlr4-runtime:4.7" level="project" />
+    <orderEntry type="library" name="scala-sdk-2.12.2" level="project" />
+    <orderEntry type="library" name="com.lihaoyi:upickle_2.12:0.4.4" level="project" />
+    <orderEntry type="library" name="org.scala-lang.modules:scala-java8-compat_2.12:0.8.0" level="project" />
+    <orderEntry type="library" name="org.scalameta:scalameta_2.12:1.7.0" level="project" />
+    <orderEntry type="library" name="org.spire-math:spire_2.12:0.13.0" level="project" />
+    <orderEntry type="module" module-name="runtime" />
   </component>
 </module>

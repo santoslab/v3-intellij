@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2016, Robby, Kansas State University
+ Copyright (c) 2017, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -26,13 +26,12 @@
 package org.sireum.intellij.logika.lexer
 
 import java.awt.Font
-import java.io.StringReader
 
 import com.intellij.openapi.editor.{DefaultLanguageHighlighterColors, Editor}
-import com.intellij.openapi.editor.markup.{HighlighterTargetArea, TextAttributes, RangeHighlighter}
+import com.intellij.openapi.editor.markup.{HighlighterTargetArea, RangeHighlighter, TextAttributes}
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
-import org.antlr.v4.runtime.{ANTLRInputStream, Token}
+import org.antlr.v4.runtime.{CharStreams, Token}
 import org.sireum.intellij.Util
 import org.sireum.logika.parser._
 import org.sireum.util._
@@ -114,8 +113,7 @@ object Lexer {
         }
       case _ =>
     }
-    val sr = new StringReader(editor.getDocument.getText)
-    val inputStream = new ANTLRInputStream(sr)
+    val inputStream = CharStreams.fromString(editor.getDocument.getText)
     val lexer = new Antlr4LogikaLexer(inputStream)
 
     val tokens: CSeq[Token] = {

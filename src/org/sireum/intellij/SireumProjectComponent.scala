@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2016, Robby, Kansas State University
+ Copyright (c) 2017, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -26,10 +26,11 @@
 package org.sireum.intellij
 
 import com.intellij.openapi.components.ProjectComponent
-import com.intellij.openapi.fileEditor.{FileEditorManagerEvent, FileEditorManagerListener, FileEditorManager}
+import com.intellij.openapi.fileEditor.{FileEditorManager, FileEditorManagerEvent, FileEditorManagerListener}
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.{ToolWindowAnchor, ToolWindowManager}
+import org.sireum.intellij.lang.Slang
 import org.sireum.intellij.logika.action.LogikaCheckAction
 
 class SireumProjectComponent(project: Project) extends ProjectComponent {
@@ -48,12 +49,14 @@ class SireumProjectComponent(project: Project) extends ProjectComponent {
           override def fileClosed(source: FileEditorManager,
                                   file: VirtualFile): Unit = {
             LogikaCheckAction.editorClosed(project)
+            Slang.editorClosed(project, file)
           }
 
           override def fileOpened(source: FileEditorManager,
                                   file: VirtualFile): Unit = {
             val editor = source.getSelectedTextEditor
             LogikaCheckAction.editorOpened(project, file, editor)
+            Slang.editorOpened(project, file, editor)
           }
 
           override def

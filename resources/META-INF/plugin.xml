@@ -45,8 +45,6 @@
 
     <idea-version since-build="171.3780"/>
 
-    <depends>org.intellij.scala</depends>
-
     <depends>com.intellij.modules.lang</depends>
 
     <extensions defaultExtensionNs="com.intellij">

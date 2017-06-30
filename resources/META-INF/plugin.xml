@@ -26,7 +26,7 @@
 <idea-plugin>
     <id>org.sireum.intellij</id>
     <name>Sireum v3</name>
-    <version>3.0.0-15-SNAPSHOT.3</version>
+    <version>3.0.0-15-SNAPSHOT.4</version>
     <vendor email="robby@santoslab.org" url="http://robby.santoslab.org">Robby, SAnToS Lab, Kansas State University
     </vendor>
 

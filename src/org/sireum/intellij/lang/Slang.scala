@@ -44,7 +44,7 @@ import com.intellij.util.ui.UIUtil
 import org.sireum.intellij.Util
 import org.sireum.intellij.logika.action.LogikaCheckAction
 import org.sireum.intellij.logika.action.LogikaCheckAction._
-import org.sireum.lang.parser.ScalaMetaParser
+import org.sireum.lang.parser.SlangParser
 import org.sireum.util._
 
 object Slang {
@@ -62,11 +62,12 @@ object Slang {
   val emptyAction: AnAction = _ => {}
 
   def editorOpened(project: Project, file: VirtualFile, editor: Editor): Unit = {
-    Util.getFileExt(project) match {
-      case "scala" =>
+    val ext = Util.getFileExt(project)
+    ext match {
+      case "scala" | "slang" =>
         val fileUri = new File(file.getCanonicalPath).toURI.toString
         val r = parse(editor.getDocument.getText, fileUri)
-        if (r.programOpt.nonEmpty || r.tags.nonEmpty) {
+        if (r.hashSireum || ext == "slang") {
           processResult(editor, r)
           editor.putUserData(changedKey, Some(System.currentTimeMillis()))
           scheduler.scheduleAtFixedRate((() => analyze(editor, fileUri)): Runnable, 0, changeThreshold, TimeUnit.MILLISECONDS)
@@ -145,8 +146,8 @@ object Slang {
 
   }
 
-  def parse(text: String, fileUri: FileResourceUri): ScalaMetaParser.Result =
-    ScalaMetaParser(isWorksheet = false, isDiet = false, fileUriOpt = Some(fileUri), text = text)
+  def parse(text: String, fileUri: FileResourceUri): SlangParser.Result =
+    SlangParser(isWorksheet = false, isDiet = false, fileUriOpt = Some(fileUri), text = text)
 
   def analyze(editor: Editor, fileUri: FileResourceUri): Unit = {
     editor.synchronized {
@@ -162,7 +163,7 @@ object Slang {
     }
   }
 
-  def processResult(editor: Editor, r: ScalaMetaParser.Result): Unit =
+  def processResult(editor: Editor, r: SlangParser.Result): Unit =
     ApplicationManager.getApplication.invokeLater(() => editor.synchronized {
       val mm = editor.getMarkupModel
       var rhs = editor.getUserData(analysisDataKey)

@@ -147,7 +147,8 @@ object Slang {
   }
 
   def parse(text: String, fileUri: FileResourceUri): SlangParser.Result =
-    SlangParser(isWorksheet = false, isDiet = false, fileUriOpt = Some(fileUri), text = text)
+    SlangParser(allowSireumPackage = "true" == System.getProperty("org.sireum.ive.dev"),
+      isWorksheet = false, isDiet = false, fileUriOpt = Some(fileUri), text = text)
 
   def analyze(editor: Editor, fileUri: FileResourceUri): Unit = {
     editor.synchronized {

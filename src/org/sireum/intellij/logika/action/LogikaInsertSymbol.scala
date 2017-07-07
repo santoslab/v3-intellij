@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2016, Robby, Kansas State University
+ Copyright (c) 2017, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -80,8 +80,16 @@ final class LogikaInsertOr() extends LogikaInsertSymbol {
   val symbol: String = "∨"
 }
 
+final class LogikaInsertXor() extends LogikaInsertSymbol {
+  val symbol: String = "⊻"
+}
+
 final class LogikaInsertImplies extends LogikaInsertSymbol {
   val symbol: String = "→"
+}
+
+final class LogikaInsertEqual extends LogikaInsertSymbol {
+  val symbol: String = "≡"
 }
 
 final class LogikaInsertForAll extends LogikaInsertSymbol {

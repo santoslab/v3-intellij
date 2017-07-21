@@ -41,10 +41,13 @@ import com.intellij.openapi.util.{Condition, Key}
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.util.ui.UIUtil
+import org.sireum.{ISZ, Some => SSome}
 import org.sireum.intellij.Util
 import org.sireum.intellij.logika.action.LogikaCheckAction
 import org.sireum.intellij.logika.action.LogikaCheckAction._
 import org.sireum.lang.parser.SlangParser
+import org.sireum.lang.util.AccumulatingReporter
+import org.sireum.lang.util.Reporter.Message.Level
 import org.sireum.util._
 
 object Slang {
@@ -66,9 +69,9 @@ object Slang {
     ext match {
       case "scala" | "slang" =>
         val fileUri = new File(file.getCanonicalPath).toURI.toString
-        val r = parse(editor.getDocument.getText, fileUri)
+        val (r, tags) = parse(editor.getDocument.getText, fileUri)
         if (r.hashSireum || ext == "slang") {
-          processResult(editor, r)
+          processResult(editor, tags)
           editor.putUserData(changedKey, Some(System.currentTimeMillis()))
           scheduler.scheduleAtFixedRate((() => analyze(editor, fileUri)): Runnable, 0, changeThreshold, TimeUnit.MILLISECONDS)
           editor.getDocument.addDocumentListener(new DocumentListener {
@@ -146,9 +149,24 @@ object Slang {
 
   }
 
-  def parse(text: String, fileUri: FileResourceUri): SlangParser.Result =
-    SlangParser(allowSireumPackage = "true" == System.getProperty("org.sireum.ive.dev"),
-      isWorksheet = false, isDiet = false, fileUriOpt = Some(fileUri), text = text)
+  def parse(text: String, fileUri: FileResourceUri): (SlangParser.Result, Seq[Tag]) = {
+    val reporter = AccumulatingReporter(ISZ())
+    val r = SlangParser(allowSireumPackage = "true" == System.getProperty("org.sireum.ive.dev"),
+      isWorksheet = false, isDiet = false, fileUriOpt = SSome(fileUri), text = text, reporter)
+    val fileUriOpt = Some(fileUri)
+    var tags = Vector[Tag]()
+    for (m <- reporter.messages) {
+      val SSome(pos) = m.posOpt
+      val li = LocationInfo(pos.beginLine.toInt, pos.beginColumn.toInt, pos.endLine.toInt,
+        pos.endColumn.toInt, pos.offset.toInt, pos.length.toInt)
+      m.level match {
+        case Level.InternalError | Level.Error => tags :+= li.toLocationError(fileUriOpt, m.kind.value, m.message.value)
+        case Level.Warning => tags :+= li.toLocationWarning(fileUriOpt, m.kind.value, m.message.value)
+        case Level.Info => tags :+= li.toLocationInfo(fileUriOpt, m.kind.value, m.message.value)
+      }
+    }
+    (r, tags)
+  }
 
   def analyze(editor: Editor, fileUri: FileResourceUri): Unit = {
     editor.synchronized {
@@ -156,7 +174,7 @@ object Slang {
         case Some(lastChanged) =>
           val d = System.currentTimeMillis() - lastChanged
           if (d > changeThreshold) {
-            processResult(editor, parse(editor.getDocument.getText, fileUri))
+            processResult(editor, parse(editor.getDocument.getText, fileUri)._2)
             editor.putUserData(changedKey, null)
           }
         case _ =>
@@ -164,7 +182,7 @@ object Slang {
     }
   }
 
-  def processResult(editor: Editor, r: SlangParser.Result): Unit =
+  def processResult(editor: Editor, tags: Seq[Tag]): Unit =
     ApplicationManager.getApplication.invokeLater(() => editor.synchronized {
       val mm = editor.getMarkupModel
       var rhs = editor.getUserData(analysisDataKey)
@@ -179,7 +197,7 @@ object Slang {
         (gutterErrorIcon, new TextAttributes(null, null, errorColor, EffectType.WAVE_UNDERSCORE, Font.PLAIN))
       errorAttr.setErrorStripeColor(errorColor)
       var lineMap = Map[Int, IVector[FileLocationInfoErrorMessage]]()
-      for (tag <- r.tags) (tag: @unchecked) match {
+      for (tag <- tags) (tag: @unchecked) match {
         case tag: FileLocationInfoErrorMessage =>
           lineMap += tag.lineBegin -> (lineMap.getOrElse(tag.lineBegin, ivectorEmpty) :+ tag)
           val end = scala.math.min(tag.offset + tag.length, editor.getDocument.getTextLength)

@@ -58,7 +58,7 @@ object Slang {
   val analysisDataKey = new Key[IVector[RangeHighlighter]]("Slang Analysis Data")
 
   val scheduler: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
-  val changeThreshold = 1000
+  val changeThreshold = 2000
 
   val layer = 1000000
   val tooltipSep = "<hr>"
@@ -152,7 +152,7 @@ object Slang {
   def parse(text: String, fileUri: FileResourceUri): (SlangParser.Result, Seq[Tag]) = {
     val reporter = AccumulatingReporter(ISZ())
     val r = SlangParser(allowSireumPackage = "true" == System.getProperty("org.sireum.ive.dev"),
-      isWorksheet = false, isDiet = false, fileUriOpt = SSome(fileUri), text = text, reporter)
+      isWorksheet = false, isDiet = false, fileUriOpt = SSome(fileUri), txt = text, reporter = reporter)
     val fileUriOpt = Some(fileUri)
     var tags = Vector[Tag]()
     for (m <- reporter.messages) {

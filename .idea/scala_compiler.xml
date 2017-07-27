@@ -15,7 +15,7 @@
     </parameters>
     <plugins>
       <plugin path="$USER_HOME$/.coursier/cache/v1/https/repo1.maven.org/maven2/org/scalameta/paradise_2.12.2/3.0.0-M9/paradise_2.12.2-3.0.0-M9.jar" />
-      <plugin path="$USER_HOME$/.coursier/cache/v1/https/repo1.maven.org/maven2/org/sireum/scalac-plugin_2.12/3.0.0-13/scalac-plugin_2.12-3.0.0-13.jar" />
+      <plugin path="$USER_HOME$/.coursier/cache/v1/https/repo1.maven.org/maven2/org/sireum/scalac-plugin_2.12/3.0.0-14/scalac-plugin_2.12-3.0.0-14.jar" />
     </plugins>
   </component>
 </project>

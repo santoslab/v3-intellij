@@ -28,7 +28,9 @@ package org.sireum.intellij.lang
 import java.awt.Font
 import java.io.File
 import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
+import javax.swing.Icon
 
+import com.intellij.notification.{Notification, NotificationType}
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
@@ -45,6 +47,8 @@ import org.sireum.{ISZ, Some => SSome}
 import org.sireum.intellij.Util
 import org.sireum.intellij.logika.action.LogikaCheckAction
 import org.sireum.intellij.logika.action.LogikaCheckAction._
+import org.sireum.lang.ast.TopUnit
+import org.sireum.lang.logika.TruthTableVerifier
 import org.sireum.lang.parser.SlangParser
 import org.sireum.lang.util.AccumulatingReporter
 import org.sireum.lang.util.Reporter.Message.Level
@@ -55,6 +59,7 @@ object Slang {
   object EditorEnabled
 
   val changedKey = new Key[Option[Long]]("Slang Last Changed")
+  val statusKey = new Key[Boolean]("Logika Last Status")
   val analysisDataKey = new Key[IVector[RangeHighlighter]]("Slang Analysis Data")
 
   val scheduler: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
@@ -64,14 +69,13 @@ object Slang {
   val tooltipSep = "<hr>"
   val emptyAction: AnAction = _ => {}
 
-  def editorOpened(project: Project, file: VirtualFile, editor: Editor): Unit = {
-    val ext = Util.getFileExt(project)
-    ext match {
-      case "scala" | "slang" =>
-        val fileUri = new File(file.getCanonicalPath).toURI.toString
-        val (r, tags) = parse(editor.getDocument.getText, fileUri)
-        if (r.hashSireum || ext == "slang") {
-          processResult(editor, tags)
+  def editorOpened(project: Project, file: VirtualFile, editor: Editor): Unit =
+    ApplicationManager.getApplication.invokeLater(() => {
+      val ext = Util.getFileExt(project)
+      ext match {
+        case "scala" | "slang" =>
+          val fileUri = new File(file.getCanonicalPath).toURI.toString
+          processResult(editor, check(editor, fileUri))
           editor.putUserData(changedKey, Some(System.currentTimeMillis()))
           scheduler.scheduleAtFixedRate((() => analyze(editor, fileUri)): Runnable, 0, changeThreshold, TimeUnit.MILLISECONDS)
           editor.getDocument.addDocumentListener(new DocumentListener {
@@ -142,30 +146,68 @@ object Slang {
             override def mouseDragged(e: EditorMouseEvent): Unit = {}
           })
 
-        }
+        case _ =>
+      }
 
-      case _ =>
-    }
+    })
 
-  }
-
-  def parse(text: String, fileUri: FileResourceUri): (SlangParser.Result, Seq[Tag]) = {
+  def check(editor: Editor, fileUri: FileResourceUri): Seq[Tag] = {
+    val text = editor.getDocument.getText
     val reporter = AccumulatingReporter(ISZ())
+    val (noPrev, prevStatus) = Option(editor.getUserData(statusKey)) match {
+      case Some(b) => (false, b)
+      case _ => (true, false)
+    }
     val r = SlangParser(allowSireumPackage = "true" == System.getProperty("org.sireum.ive.dev"),
       isWorksheet = false, isDiet = false, fileUriOpt = SSome(fileUri), txt = text, reporter = reporter)
+    var status = !reporter.hasIssue.value
+    r.unitOpt match {
+      case SSome(tt: TopUnit.TruthTableUnit) =>
+        TruthTableVerifier.verify(tt, reporter)
+        status = !reporter.hasIssue.value
+        if (noPrev || (status != prevStatus)) {
+          if (status) {
+            Util.notify(new Notification("Sireum Logika", "Logika Verified", "Truth Table is accepted",
+              NotificationType.INFORMATION) {
+              override def getIcon: Icon = verifiedInfoIcon
+            }, editor.getProject, shouldExpire = true)
+          } else {
+            Util.notify(new Notification("Sireum Logika", "Logika Error", "Truth Table is rejected",
+              NotificationType.ERROR), editor.getProject, shouldExpire = true)
+          }
+        }
+      case _ =>
+    }
+    for (m <- reporter.internalErrors) {
+      Util.notify(new Notification(
+        "Sireum Logika", "Logika Internal Error", m.message.value,
+        NotificationType.ERROR), editor.getProject, shouldExpire = true)
+    }
+    editor.putUserData(statusKey, status)
+
     val fileUriOpt = Some(fileUri)
     var tags = Vector[Tag]()
     for (m <- reporter.messages) {
-      val SSome(pos) = m.posOpt
-      val li = LocationInfo(pos.beginLine.toInt, pos.beginColumn.toInt, pos.endLine.toInt,
-        pos.endColumn.toInt, pos.offset.toInt, pos.length.toInt)
-      m.level match {
-        case Level.InternalError | Level.Error => tags :+= li.toLocationError(fileUriOpt, m.kind.value, m.message.value)
-        case Level.Warning => tags :+= li.toLocationWarning(fileUriOpt, m.kind.value, m.message.value)
-        case Level.Info => tags :+= li.toLocationInfo(fileUriOpt, m.kind.value, m.message.value)
+      m.posOpt match {
+        case SSome(pos) =>
+          val li = LocationInfo(pos.beginLine.toInt, pos.beginColumn.toInt, pos.endLine.toInt,
+            pos.endColumn.toInt, pos.offset.toInt, pos.length.toInt)
+          m.level match {
+            case Level.Error => tags :+= li.toLocationError(fileUriOpt, m.kind.value, m.message.value)
+            case Level.Warning => tags :+= li.toLocationWarning(fileUriOpt, m.kind.value, m.message.value)
+            case Level.Info => tags :+= li.toLocationInfo(fileUriOpt, m.kind.value, m.message.value)
+            case _ =>
+          }
+        case _ =>
+          m.level match {
+            case Level.Error => tags :+= ErrorMessage(m.kind.value, m.message.value)
+            case Level.Warning => tags :+= WarningMessage(m.kind.value, m.message.value)
+            case Level.Info => tags :+= InfoMessage(m.kind.value, m.message.value)
+            case _ =>
+          }
       }
     }
-    (r, tags)
+    tags
   }
 
   def analyze(editor: Editor, fileUri: FileResourceUri): Unit = {
@@ -174,7 +216,7 @@ object Slang {
         case Some(lastChanged) =>
           val d = System.currentTimeMillis() - lastChanged
           if (d > changeThreshold) {
-            processResult(editor, parse(editor.getDocument.getText, fileUri)._2)
+            processResult(editor, check(editor, fileUri))
             editor.putUserData(changedKey, null)
           }
         case _ =>
@@ -193,10 +235,20 @@ object Slang {
       val cs = editor.getColorsScheme
       val errorColor = cs.getAttributes(
         TextAttributesKey.find("ERRORS_ATTRIBUTES")).getErrorStripeColor
+      val warningColor = cs.getAttributes(
+        TextAttributesKey.find("WARNING_ATTRIBUTES")).getErrorStripeColor
+      val infoColor = cs.getAttributes(
+        TextAttributesKey.find("TYPO")).getEffectColor
       val (errorIcon, errorAttr) =
         (gutterErrorIcon, new TextAttributes(null, null, errorColor, EffectType.WAVE_UNDERSCORE, Font.PLAIN))
+      val (warningIcon, warningAttr) =
+        (gutterWarningIcon, new TextAttributes(null, null, warningColor, EffectType.WAVE_UNDERSCORE, Font.PLAIN))
+      val (infoIcon, infoAttr) =
+        (gutterInfoIcon, new TextAttributes(null, null, infoColor, EffectType.WAVE_UNDERSCORE, Font.PLAIN))
       errorAttr.setErrorStripeColor(errorColor)
-      var lineMap = Map[Int, IVector[FileLocationInfoErrorMessage]]()
+      warningAttr.setErrorStripeColor(warningColor)
+      infoAttr.setErrorStripeColor(infoColor)
+      var lineMap = Map[Int, IVector[MessageTag]]()
       for (tag <- tags) (tag: @unchecked) match {
         case tag: FileLocationInfoErrorMessage =>
           lineMap += tag.lineBegin -> (lineMap.getOrElse(tag.lineBegin, ivectorEmpty) :+ tag)
@@ -206,14 +258,63 @@ object Slang {
           rh.setThinErrorStripeMark(false)
           rh.setErrorStripeMarkColor(errorColor)
           rhs :+= rh
+        case tag: FileLocationInfoWarningMessage =>
+          lineMap += tag.lineBegin -> (lineMap.getOrElse(tag.lineBegin, ivectorEmpty) :+ tag)
+          val end = scala.math.min(tag.offset + tag.length, editor.getDocument.getTextLength)
+          val rh = mm.addRangeHighlighter(tag.offset, end, layer, warningAttr, HighlighterTargetArea.EXACT_RANGE)
+          rh.setErrorStripeTooltip(tag.message)
+          rh.setThinErrorStripeMark(false)
+          rh.setErrorStripeMarkColor(warningColor)
+          rhs :+= rh
+        case tag: FileLocationInfoInfoMessage =>
+          lineMap += tag.lineBegin -> (lineMap.getOrElse(tag.lineBegin, ivectorEmpty) :+ tag)
+          val end = scala.math.min(tag.offset + tag.length, editor.getDocument.getTextLength)
+          val rh = mm.addRangeHighlighter(tag.offset, end, layer, infoAttr, HighlighterTargetArea.EXACT_RANGE)
+          rh.setErrorStripeTooltip(tag.message)
+          rh.setThinErrorStripeMark(false)
+          rh.setErrorStripeMarkColor(infoColor)
+          rhs :+= rh
+        case tag: MessageTag =>
+          lineMap += 1 -> (lineMap.getOrElse(1, ivectorEmpty) :+ tag)
+        case _ =>
       }
       for ((line, tags) <- lineMap) {
+        val attr = {
+          var p = 0
+          for (tag <- tags) tag match {
+            case _: ErrorMessage if p <= 2 => p = 3
+            case _: WarningMessage if p <= 1 => p = 2
+            case _: InfoMessage if p <= 0 => p = 1
+            case _ =>
+          }
+          p match {
+            case 0 => null
+            case 1 => infoAttr
+            case 2 => warningAttr
+            case 3 => errorAttr
+          }
+        }
         val rhLine = mm.addLineHighlighter(line - 1, layer, null)
+        val (color, icon) = {
+          var p = 0
+          for (tag <- tags) {
+            tag match {
+              case _: ErrorTag if p <= 1 => p = 2
+              case _: WarningTag if p <= 0 => p = 1
+              case _ =>
+            }
+          }
+          p match {
+            case 0 => (infoColor, infoIcon)
+            case 1 => (warningColor, warningIcon)
+            case 2 => (errorColor, errorIcon)
+          }
+        }
         rhLine.setThinErrorStripeMark(false)
-        rhLine.setErrorStripeMarkColor(errorColor)
+        rhLine.setErrorStripeMarkColor(color)
         rhLine.setGutterIconRenderer(
           LogikaCheckAction.gutterIconRenderer(tags.map(_.message).mkString(tooltipSep),
-            errorIcon, emptyAction))
+            icon, emptyAction))
         rhs :+= rhLine
       }
       editor.putUserData(analysisDataKey, rhs)

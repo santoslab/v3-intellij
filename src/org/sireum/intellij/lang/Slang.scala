@@ -227,6 +227,14 @@ object Slang {
   def processResult(editor: Editor, tags: Seq[Tag]): Unit =
     ApplicationManager.getApplication.invokeLater(() => editor.synchronized {
       val mm = editor.getMarkupModel
+      val document = editor.getDocument
+
+      def addRangeHighlighter(line: PosInteger, offset: Natural, length: Natural, attr: TextAttributes): RangeHighlighter = {
+        val actualLine = document.getLineNumber(offset)
+        val end = scala.math.min(offset + length, editor.getDocument.getTextLength)
+        mm.addRangeHighlighter(offset, end, layer, attr, HighlighterTargetArea.EXACT_RANGE)
+      }
+
       var rhs = editor.getUserData(analysisDataKey)
       if (rhs != null)
         for (rh <- rhs)
@@ -252,24 +260,21 @@ object Slang {
       for (tag <- tags) (tag: @unchecked) match {
         case tag: FileLocationInfoErrorMessage =>
           lineMap += tag.lineBegin -> (lineMap.getOrElse(tag.lineBegin, ivectorEmpty) :+ tag)
-          val end = scala.math.min(tag.offset + tag.length, editor.getDocument.getTextLength)
-          val rh = mm.addRangeHighlighter(tag.offset, end, layer, errorAttr, HighlighterTargetArea.EXACT_RANGE)
+          val rh = addRangeHighlighter(tag.lineBegin, tag.offset, tag.length, errorAttr)
           rh.setErrorStripeTooltip(tag.message)
           rh.setThinErrorStripeMark(false)
           rh.setErrorStripeMarkColor(errorColor)
           rhs :+= rh
         case tag: FileLocationInfoWarningMessage =>
           lineMap += tag.lineBegin -> (lineMap.getOrElse(tag.lineBegin, ivectorEmpty) :+ tag)
-          val end = scala.math.min(tag.offset + tag.length, editor.getDocument.getTextLength)
-          val rh = mm.addRangeHighlighter(tag.offset, end, layer, warningAttr, HighlighterTargetArea.EXACT_RANGE)
+          val rh = addRangeHighlighter(tag.lineBegin, tag.offset, tag.length, warningAttr)
           rh.setErrorStripeTooltip(tag.message)
           rh.setThinErrorStripeMark(false)
           rh.setErrorStripeMarkColor(warningColor)
           rhs :+= rh
         case tag: FileLocationInfoInfoMessage =>
           lineMap += tag.lineBegin -> (lineMap.getOrElse(tag.lineBegin, ivectorEmpty) :+ tag)
-          val end = scala.math.min(tag.offset + tag.length, editor.getDocument.getTextLength)
-          val rh = mm.addRangeHighlighter(tag.offset, end, layer, infoAttr, HighlighterTargetArea.EXACT_RANGE)
+          val rh = addRangeHighlighter(tag.lineBegin, tag.offset, tag.length, infoAttr)
           rh.setErrorStripeTooltip(tag.message)
           rh.setThinErrorStripeMark(false)
           rh.setErrorStripeMarkColor(infoColor)

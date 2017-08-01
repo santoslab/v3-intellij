@@ -63,7 +63,7 @@ object Slang {
   val analysisDataKey = new Key[IVector[RangeHighlighter]]("Slang Analysis Data")
 
   val scheduler: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
-  val changeThreshold = 2000
+  val changeThreshold = 1500
 
   val layer = 1000000
   val tooltipSep = "<hr>"

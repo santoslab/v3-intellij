@@ -77,7 +77,15 @@ object Slang {
           val fileUri = new File(file.getCanonicalPath).toURI.toString
           processResult(editor, check(editor, fileUri))
           editor.putUserData(changedKey, Some(System.currentTimeMillis()))
-          scheduler.scheduleAtFixedRate((() => analyze(editor, fileUri)): Runnable, 0, changeThreshold, TimeUnit.MILLISECONDS)
+          scheduler.scheduleAtFixedRate((() => {
+            try analyze(editor, fileUri) catch {
+              case t: Throwable =>
+                val sw = new java.io.StringWriter()
+                t.printStackTrace(new java.io.PrintWriter(sw))
+                Util.notify(new Notification("Slang", "Slang Internal Error", s"Unexpected error: ${sw.toString}",
+                  NotificationType.ERROR), editor.getProject, shouldExpire = true)
+            }
+          }): Runnable, 0, changeThreshold, TimeUnit.MILLISECONDS)
           editor.getDocument.addDocumentListener(new DocumentListener {
             override def documentChanged(event: DocumentEvent): Unit = {
               if (editor.isDisposed) return

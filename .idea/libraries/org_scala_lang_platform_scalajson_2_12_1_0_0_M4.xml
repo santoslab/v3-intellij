@@ -4,7 +4,6 @@
     <CLASSES>
       <root url="jar://$MAVEN_REPOSITORY$/org/scala-lang/platform/scalajson_2.12/1.0.0-M4/scalajson_2.12-1.0.0-M4.jar!/" />
       <root url="jar://$MAVEN_REPOSITORY$/org/scala-lang/scala-library/2.12.2/scala-library-2.12.2.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scala-lang/scala-library/2.12.2/scala-library-2.12.2.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

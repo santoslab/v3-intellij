@@ -198,8 +198,8 @@ object Slang {
     for (m <- reporter.messages) {
       m.posOpt match {
         case SSome(pos) =>
-          val li = LocationInfo(pos.beginLine.toInt, pos.beginColumn.toInt, pos.endLine.toInt,
-            pos.endColumn.toInt, pos.offset.toInt, pos.length.toInt)
+          val li = LocationInfo(pos.beginLine.toMP.toInt, pos.beginColumn.toMP.toInt, pos.endLine.toMP.toInt,
+            pos.endColumn.toMP.toInt, pos.offset.toMP.toInt, pos.length.toMP.toInt)
           m.level match {
             case Level.Error => tags :+= li.toLocationError(fileUriOpt, m.kind.value, m.message.value)
             case Level.Warning => tags :+= li.toLocationWarning(fileUriOpt, m.kind.value, m.message.value)

@@ -265,7 +265,7 @@ object Slang {
       warningAttr.setErrorStripeColor(warningColor)
       infoAttr.setErrorStripeColor(infoColor)
       var lineMap = Map[Int, IVector[MessageTag]]()
-      for (tag <- tags) (tag: @unchecked) match {
+      for (tag <- tags) scala.util.Try((tag: @unchecked) match {
         case tag: FileLocationInfoErrorMessage =>
           lineMap += tag.lineBegin -> (lineMap.getOrElse(tag.lineBegin, ivectorEmpty) :+ tag)
           val rh = addRangeHighlighter(tag.lineBegin, tag.offset, tag.length, errorAttr)
@@ -290,7 +290,7 @@ object Slang {
         case tag: MessageTag =>
           lineMap += 1 -> (lineMap.getOrElse(1, ivectorEmpty) :+ tag)
         case _ =>
-      }
+      })
       for ((line, tags) <- lineMap) {
         val attr = {
           var p = 0

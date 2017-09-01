@@ -247,7 +247,7 @@ object LogikaCheckAction {
     editor.getDocument.addDocumentListener(new DocumentListener {
       override def documentChanged(event: DocumentEvent): Unit = {
         if (LogikaConfigurable.syntaxHighlighting || LogikaConfigurable.backgroundAnalysis)
-          analyze(project, file, editor, isBackground = true)
+          scala.util.Try(analyze(project, file, editor, isBackground = true))
       }
 
       override def beforeDocumentChange(event: DocumentEvent): Unit = {}
@@ -580,29 +580,30 @@ object LogikaCheckAction {
 
         def consoleReportItems(cis: Iterable[ConsoleReportItem],
                                line: PosInteger, icon: Icon, attr: TextAttributes, color: Color): Unit = {
-          val rhLine = mm.addLineHighlighter(line - 1, layer, null)
-          rhLine.setThinErrorStripeMark(false)
-          rhLine.setErrorStripeMarkColor(color)
-          rhLine.setGutterIconRenderer(gutterIconRenderer(cis.map(_.message).mkString(tooltipSep),
-            icon, _ => sireumToolWindowFactory(project, f => {
-              val tw = f.toolWindow.asInstanceOf[ToolWindowImpl]
-              tw.activate(() => {
-                saveSetDividerLocation(f.logika.logikaToolSplitPane, 1.0)
-                f.logika.logikaList.setModel(listModel)
-              })
-            })))
-          rhs :+= rhLine
+          scala.util.Try {
+            val rhLine = mm.addLineHighlighter(line - 1, layer, null)
+            rhLine.setThinErrorStripeMark(false)
+            rhLine.setErrorStripeMarkColor(color)
+            rhLine.setGutterIconRenderer(gutterIconRenderer(cis.map(_.message).mkString(tooltipSep),
+              icon, _ => sireumToolWindowFactory(project, f => {
+                val tw = f.toolWindow.asInstanceOf[ToolWindowImpl]
+                tw.activate(() => {
+                  saveSetDividerLocation(f.logika.logikaToolSplitPane, 1.0)
+                  val list = f.logika.logikaList
+                  list.synchronized(list.setModel(listModel))
+                })
+              })))
+            rhs :+= rhLine
+          }
           for (ci <- cis) {
-            listModel.addElement(ci)
-            val end = scala.math.min(ci.offset + ci.length, editor.getDocument.getTextLength)
-            try {
+            scala.util.Try {
+              val end = scala.math.min(ci.offset + ci.length, editor.getDocument.getTextLength)
               val rh = mm.addRangeHighlighter(ci.offset, end, layer, attr, HighlighterTargetArea.EXACT_RANGE)
               rh.setErrorStripeTooltip(ci.message)
               rh.setThinErrorStripeMark(false)
               rh.setErrorStripeMarkColor(color)
               rhs :+= rh
-            } catch {
-              case _: IndexOutOfBoundsException | _: IllegalArgumentException =>
+              listModel.addElement(ci)
             }
           }
         }
@@ -648,23 +649,26 @@ object LogikaCheckAction {
                 val font = editor.getColorsScheme.getFont(EditorFontType.PLAIN)
                 f.logika.logikaTextArea.setFont(font)
                 tw.activate(() => {
-                  f.logika.logikaList.setModel(summoningListModel)
-                  var selection = 0
-                  var i = 0
-                  while (i < ris.summoning.size && selection == 0) {
-                    if (ris.summoning(i).messageFirstLine.contains("Invalid")) {
-                      selection = i
+                  val list = f.logika.logikaList
+                  list.synchronized {
+                    list.setModel(summoningListModel)
+                    var selection = 0
+                    var i = 0
+                    while (i < ris.summoning.size && selection == 0) {
+                      if (ris.summoning(i).messageFirstLine.contains("Invalid")) {
+                        selection = i
+                      }
+                      i += 1
                     }
-                    i += 1
-                  }
-                  i = 0
-                  while (i < ris.summoning.size && selection == 0) {
-                    if (ris.summoning(i).messageFirstLine.contains("Don't Know")) {
-                      selection = i
+                    i = 0
+                    while (i < ris.summoning.size && selection == 0) {
+                      if (ris.summoning(i).messageFirstLine.contains("Don't Know")) {
+                        selection = i
+                      }
+                      i += 1
                     }
-                    i += 1
+                    list.setSelectedIndex(selection)
                   }
-                  f.logika.logikaList.setSelectedIndex(selection)
                 })
               })))
             rhs :+= rhLine
@@ -673,28 +677,30 @@ object LogikaCheckAction {
         sireumToolWindowFactory(project, f => {
           f.logika.logikaTextArea.setFont(editor.getColorsScheme.getFont(EditorFontType.PLAIN))
           val list = f.logika.logikaList
-          for (lsl <- list.getListSelectionListeners) {
-            list.removeListSelectionListener(lsl)
+          list.synchronized {
+            for (lsl <- list.getListSelectionListeners) {
+              list.removeListSelectionListener(lsl)
+            }
+            list.setModel(listModel)
+            list.addListSelectionListener(_ => list.synchronized {
+              val i = list.getSelectedIndex
+              if (0 <= i && i < list.getModel.getSize)
+                list.getModel.getElementAt(i) match {
+                  case sri: SummoningReportItem =>
+                    f.logika.logikaToolSplitPane.setDividerLocation(dividerWeight)
+                    val font = editor.getColorsScheme.getFont(EditorFontType.PLAIN)
+                    f.logika.logikaTextArea.setText(normalizeChars(font, sri.message))
+                    f.logika.logikaTextArea.setCaretPosition(0)
+                    if (!editor.isDisposed)
+                      FileEditorManager.getInstance(project).openTextEditor(
+                        new OpenFileDescriptor(project, file, sri.offset), true)
+                  case cri: ConsoleReportItem =>
+                    if (!editor.isDisposed)
+                      FileEditorManager.getInstance(project).openTextEditor(
+                        new OpenFileDescriptor(project, file, cri.offset), true)
+                }
+            })
           }
-          list.setModel(listModel)
-          list.addListSelectionListener(_ => {
-            val i = list.getSelectedIndex
-            if (0 <= i && i < list.getModel.getSize)
-              list.getModel.getElementAt(i) match {
-                case sri: SummoningReportItem =>
-                  f.logika.logikaToolSplitPane.setDividerLocation(dividerWeight)
-                  val font = editor.getColorsScheme.getFont(EditorFontType.PLAIN)
-                  f.logika.logikaTextArea.setText(normalizeChars(font, sri.message))
-                  f.logika.logikaTextArea.setCaretPosition(0)
-                  if (!editor.isDisposed)
-                    FileEditorManager.getInstance(project).openTextEditor(
-                      new OpenFileDescriptor(project, file, sri.offset), true)
-                case cri: ConsoleReportItem =>
-                  if (!editor.isDisposed)
-                    FileEditorManager.getInstance(project).openTextEditor(
-                      new OpenFileDescriptor(project, file, cri.offset), true)
-              }
-          })
           f.logika.logikaTextArea.setText("")
           saveSetDividerLocation(f.logika.logikaToolSplitPane, 1.0)
         })

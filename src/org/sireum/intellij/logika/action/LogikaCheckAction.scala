@@ -74,7 +74,7 @@ object LogikaCheckAction {
   val gutterSummoningIcon: Icon = IconLoader.getIcon("/logika/icon/logika-gutter-summoning.png")
   val verifiedInfoIcon: Icon = IconLoader.getIcon("/logika/icon/logika-verified-info.png")
   val queue = new LinkedBlockingQueue[String]()
-  val editorMap: MMap[String, (Project, VirtualFile, Editor)] = mmapEmpty
+  val editorMap: MMap[String, (Project, VirtualFile, Editor, String)] = mmapEmpty
   val logikaKey = new Key[EditorEnabled.type]("Logika")
   val analysisDataKey = new Key[ISeq[RangeHighlighter]]("Logika Analysis Data")
   val statusKey = new Key[Boolean]("Logika Analysis Status")
@@ -89,7 +89,7 @@ object LogikaCheckAction {
 
   final case class Request(time: Long, requestId: String,
                            project: Project, file: VirtualFile, editor: Editor,
-                           msgGen: () => String)
+                           input: String, msgGen: () => String)
 
   def init(p: Project): Unit = {
     if (processInit.isEmpty) {
@@ -165,7 +165,7 @@ object LogikaCheckAction {
                   if (System.currentTimeMillis - r.time > LogikaConfigurable.idle) {
                     request = None
                     editorMap.synchronized {
-                      editorMap(r.requestId) = (r.project, r.file, r.editor)
+                      editorMap(r.requestId) = (r.project, r.file, r.editor, r.input)
                     }
                     queue.add(r.msgGen())
                   }
@@ -222,7 +222,7 @@ object LogikaCheckAction {
 
     if (isBackground) {
       this.synchronized {
-        request = Some(Request(t, requestId, project, file, editor, f _))
+        request = Some(Request(t, requestId, project, file, editor, input, f _))
       }
     } else {
       editorMap.synchronized {
@@ -234,7 +234,7 @@ object LogikaCheckAction {
           }
           request = None
         }
-        editorMap(requestId) = (project, file, editor)
+        editorMap(requestId) = (project, file, editor, input)
       }
       queue.add(f)
     }
@@ -520,7 +520,7 @@ object LogikaCheckAction {
         notifyHelper(None, None, isBackground = false, tags)
         return
       }
-      val (project, file, editor) = editorMap.synchronized {
+      val (project, file, editor, input) = editorMap.synchronized {
         editorMap.get(r.requestId) match {
           case Some(pe) =>
             editorMap -= r.requestId
@@ -547,7 +547,7 @@ object LogikaCheckAction {
         val (lTags, nlTags) = tags.partition(
           _.isInstanceOf[UriTag with LocationInfoTag with MessageTag with KindTag with SeverityTag])
         notifyHelper(Some(project), Some(editor), r.isBackground, nlTags)
-        if (lTags.isEmpty) return
+        if (lTags.isEmpty || input != editor.getDocument.getText) return
         rhs = ivectorEmpty[RangeHighlighter]
         val cs = editor.getColorsScheme
         val errorColor = cs.getAttributes(
@@ -612,7 +612,7 @@ object LogikaCheckAction {
           if (ris.error.nonEmpty) consoleReportItems(ris.error, line, errorIcon, errorAttr, errorColor)
           if (ris.warning.nonEmpty) consoleReportItems(ris.warning, line, warningIcon, warningAttr, warningColor)
           if (ris.info.nonEmpty) consoleReportItems(ris.info, line, infoIcon, infoAttr, infoColor)
-          if (ris.checksat.nonEmpty) {
+          if (ris.checksat.nonEmpty) scala.util.Try {
             val rhLine = mm.addLineHighlighter(line - 1, layer, null)
             rhLine.setThinErrorStripeMark(false)
             rhLine.setGutterIconRenderer(gutterIconRenderer(ris.checksat.map(_.message).mkString(tooltipSep),
@@ -621,24 +621,26 @@ object LogikaCheckAction {
           }
           ris.hint match {
             case Some(hint) =>
-              val rhLine = mm.addLineHighlighter(line - 1, layer, null)
-              rhLine.setThinErrorStripeMark(false)
-              rhLine.setGutterIconRenderer(gutterIconRenderer("Click to show some hints",
-                gutterHintIcon, _ => sireumToolWindowFactory(project, f => {
-                  val tw = f.toolWindow.asInstanceOf[ToolWindowImpl]
-                  val font = editor.getColorsScheme.getFont(EditorFontType.PLAIN)
-                  f.logika.logikaTextArea.setFont(font)
-                  tw.activate(() => {
-                    saveSetDividerLocation(f.logika.logikaToolSplitPane, 0.0)
-                    f.logika.logikaTextArea.setText(normalizeChars(font, hint.message))
-                    f.logika.logikaTextArea.setCaretPosition(0)
+              scala.util.Try {
+                val rhLine = mm.addLineHighlighter(line - 1, layer, null)
+                rhLine.setThinErrorStripeMark(false)
+                rhLine.setGutterIconRenderer(gutterIconRenderer("Click to show some hints",
+                  gutterHintIcon, _ => sireumToolWindowFactory(project, f => {
+                    val tw = f.toolWindow.asInstanceOf[ToolWindowImpl]
+                    val font = editor.getColorsScheme.getFont(EditorFontType.PLAIN)
+                    f.logika.logikaTextArea.setFont(font)
+                    tw.activate(() => {
+                      saveSetDividerLocation(f.logika.logikaToolSplitPane, 0.0)
+                      f.logika.logikaTextArea.setText(normalizeChars(font, hint.message))
+                      f.logika.logikaTextArea.setCaretPosition(0)
+                    })
                   })
-                })
-              ))
-              rhs :+= rhLine
+                ))
+                rhs :+= rhLine
+              }
             case _ =>
           }
-          if (ris.summoning.nonEmpty) {
+          if (ris.summoning.nonEmpty) scala.util.Try {
             val rhLine = mm.addLineHighlighter(line - 1, layer, null)
             rhLine.setThinErrorStripeMark(false)
             rhLine.setGutterIconRenderer(gutterIconRenderer("Click to show scribed incantations",

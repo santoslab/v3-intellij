@@ -466,6 +466,7 @@
         <properties>
           <enabled value="false"/>
           <text value="Unicode hints"/>
+          <toolTipText value="Use Unicode/ASCII for programming logic hints"/>
         </properties>
       </component>
     </children>

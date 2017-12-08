@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2016, Robby, Kansas State University
+ Copyright (c) 2017, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@ import javax.swing.event.{DocumentEvent, DocumentListener}
 
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.options.Configurable
-import com.intellij.openapi.util.IconLoader
+import com.intellij.openapi.util.{IconLoader, SystemInfo}
 import com.intellij.ui.JBColor
 import org.sireum.logika.message.CheckerKind
 import org.sireum.util._
@@ -49,6 +49,7 @@ object LogikaConfigurable {
   private val checkSatKey = logikaKey + "checkSat"
   private val fileExtsKey = logikaKey + "fileExts"
   private val hintKey = logikaKey + "hint"
+  private val hintUnicodeKey = logikaKey + "hintUnicode"
   private val inscribeSummoningsKey = logikaKey + "inscribeSummonings"
   private val coneInfluenceKey = logikaKey + "coneInfluence"
   private val checkerKindKey = logikaKey + "checkerKind"
@@ -66,6 +67,7 @@ object LogikaConfigurable {
   private[logika] var checkSat = false
   private[logika] var fileExts: ISeq[String] = ivector("sc")
   private[logika] var hint = false
+  private[logika] var hintUnicode = SystemInfo.isMac
   private[logika] var inscribeSummonings = false
   private[logika] var coneInfluence = false
   private[logika] var checkerKind = CheckerKind.Forward
@@ -85,6 +87,7 @@ object LogikaConfigurable {
     checkSat = pc.getBoolean(checkSatKey, checkSat)
     fileExts = Option(pc.getValue(fileExtsKey)).flatMap(parseFileExts).getOrElse(fileExts)
     hint = pc.getBoolean(hintKey, hint)
+    hint = pc.getBoolean(hintUnicodeKey, hintUnicode)
     inscribeSummonings = pc.getBoolean(inscribeSummoningsKey, inscribeSummonings)
     coneInfluence = pc.getBoolean(coneInfluenceKey, coneInfluence)
     checkerKind = pc.getValue(checkerKindKey, checkerKind)
@@ -105,6 +108,7 @@ object LogikaConfigurable {
     pc.setValue(checkSatKey, checkSat.toString)
     pc.setValue(fileExtsKey, fileExtsString)
     pc.setValue(hintKey, hint.toString)
+    pc.setValue(hintUnicodeKey, hintUnicode.toString)
     pc.setValue(inscribeSummoningsKey, inscribeSummonings.toString)
     pc.setValue(coneInfluenceKey, coneInfluence.toString)
     pc.setValue(checkerKindKey, checkerKind)
@@ -173,6 +177,7 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
         checkSatCheckBox.isSelected != checkSat ||
         fileExtsTextField.getText != fileExtsString ||
         hintCheckBox.isSelected != hint ||
+        hintUnicodeCheckBox.isSelected != hintUnicode ||
         inscribeSummoningsCheckBox.isSelected != inscribeSummonings ||
         coneInfluenceCheckBox.isSelected != coneInfluence ||
         selectedKind != checkerKind ||
@@ -246,6 +251,9 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
       recursionBoundTextField.setEnabled(isUnrolling)
       //methodContractCheckBox.setEnabled(isUnrolling)
     }
+    def updateHintUnicode() = {
+      hintUnicodeCheckBox.setEnabled(hintCheckBox.isSelected)
+    }
 
     logoLabel.setIcon(logo)
 
@@ -300,8 +308,10 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
 
     symExeRadioButton.addChangeListener(_ => updateSymExe())
     unrollingSymExeRadioButton.addChangeListener(_ => updateSymExe())
+    hintCheckBox.addChangeListener(_ => updateHintUnicode())
 
     updateSymExe()
+    updateHintUnicode()
 
     logikaPanel
   }
@@ -318,6 +328,7 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
     checkSat = checkSatCheckBox.isSelected
     fileExts = parseFileExts(fileExtsTextField.getText).getOrElse(fileExts)
     hint = hintCheckBox.isSelected
+    hintUnicode = hintUnicodeCheckBox.isSelected
     inscribeSummonings = inscribeSummoningsCheckBox.isSelected
     coneInfluence = coneInfluenceCheckBox.isSelected
     checkerKind = selectedKind
@@ -338,6 +349,7 @@ final class LogikaConfigurable extends LogikaForm with Configurable {
     checkSatCheckBox.setSelected(checkSat)
     fileExtsTextField.setText(fileExtsString)
     hintCheckBox.setSelected(hint)
+    hintUnicodeCheckBox.setSelected(hintUnicode)
     inscribeSummoningsCheckBox.setSelected(inscribeSummonings)
     coneInfluenceCheckBox.setSelected(coneInfluence)
     checkerKind match {

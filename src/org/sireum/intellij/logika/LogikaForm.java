@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2016, Robby, Kansas State University
+ Copyright (c) 2017, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -67,4 +67,5 @@ public abstract class LogikaForm {
     protected JLabel recursionBoundLabel;
     protected JTextField recursionBoundTextField;
     protected JCheckBox methodContractCheckBox;
+    protected JCheckBox hintUnicodeCheckBox;
 }

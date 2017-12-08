@@ -504,9 +504,8 @@ object LogikaCheckAction {
     })
   }
 
-  def normalizeChars(font: Font, text: String): String = {
-    val isMeslo = font.getFontName.contains("Meslo")
-    if ((SystemInfo.isWindows || SystemInfo.isLinux) && !isMeslo) toASCII(text)
+  def normalizeChars(text: String): String = {
+    if (!LogikaConfigurable.hintUnicode) toASCII(text)
     else text
   }
 
@@ -631,7 +630,7 @@ object LogikaCheckAction {
                     f.logika.logikaTextArea.setFont(font)
                     tw.activate(() => {
                       saveSetDividerLocation(f.logika.logikaToolSplitPane, 0.0)
-                      f.logika.logikaTextArea.setText(normalizeChars(font, hint.message))
+                      f.logika.logikaTextArea.setText(normalizeChars(hint.message))
                       f.logika.logikaTextArea.setCaretPosition(0)
                     })
                   })
@@ -690,8 +689,7 @@ object LogikaCheckAction {
                 list.getModel.getElementAt(i) match {
                   case sri: SummoningReportItem =>
                     f.logika.logikaToolSplitPane.setDividerLocation(dividerWeight)
-                    val font = editor.getColorsScheme.getFont(EditorFontType.PLAIN)
-                    f.logika.logikaTextArea.setText(normalizeChars(font, sri.message))
+                    f.logika.logikaTextArea.setText(normalizeChars(sri.message))
                     f.logika.logikaTextArea.setCaretPosition(0)
                     if (!editor.isDisposed)
                       TransactionGuard.submitTransaction(project, (() =>

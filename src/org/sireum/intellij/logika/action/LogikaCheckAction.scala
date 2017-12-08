@@ -34,7 +34,7 @@ import com.intellij.openapi.editor.colors.{EditorFontType, TextAttributesKey}
 import com.intellij.openapi.editor.event._
 import com.intellij.notification.{Notification, NotificationType}
 import com.intellij.openapi.actionSystem._
-import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.{ApplicationManager, TransactionGuard}
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.markup._
 import com.intellij.openapi.fileEditor.{FileEditorManager, OpenFileDescriptor}
@@ -694,12 +694,14 @@ object LogikaCheckAction {
                     f.logika.logikaTextArea.setText(normalizeChars(font, sri.message))
                     f.logika.logikaTextArea.setCaretPosition(0)
                     if (!editor.isDisposed)
-                      FileEditorManager.getInstance(project).openTextEditor(
-                        new OpenFileDescriptor(project, file, sri.offset), true)
+                      TransactionGuard.submitTransaction(project, (() =>
+                        FileEditorManager.getInstance(project).openTextEditor(
+                          new OpenFileDescriptor(project, file, sri.offset), true)): Runnable)
                   case cri: ConsoleReportItem =>
                     if (!editor.isDisposed)
-                      FileEditorManager.getInstance(project).openTextEditor(
-                        new OpenFileDescriptor(project, file, cri.offset), true)
+                      TransactionGuard.submitTransaction(project, (() =>
+                        FileEditorManager.getInstance(project).openTextEditor(
+                          new OpenFileDescriptor(project, file, cri.offset), true)): Runnable)
                 }
             })
           }

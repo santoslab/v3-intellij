@@ -373,7 +373,9 @@ object LogikaCheckAction {
 
   private sealed trait ReportItem
 
-  private final case class ConsoleReportItem(line: PosInteger,
+  private final case class ConsoleReportItem(project: Project,
+                                             file: VirtualFile,
+                                             line: PosInteger,
                                              column: PosInteger,
                                              offset: Natural,
                                              length: Natural,
@@ -385,7 +387,9 @@ object LogikaCheckAction {
 
   private final case class HintReportItem(message: String) extends ReportItem
 
-  private final case class SummoningReportItem(messageFirstLine: String,
+  private final case class SummoningReportItem(project: Project,
+                                               file: VirtualFile,
+                                               messageFirstLine: String,
                                                offset: Natural,
                                                message: String) extends ReportItem {
     override def toString: String = messageFirstLine
@@ -398,7 +402,9 @@ object LogikaCheckAction {
                                        checksat: MArray[CheckSatReportItem] = marrayEmpty,
                                        summoning: MArray[SummoningReportItem] = marrayEmpty)
 
-  private def processLocationTags(tags: IVector[Tag]): MMap[PosInteger, ReportItems] = {
+  private def processLocationTags(project: Project,
+                                  file: VirtualFile,
+                                  tags: IVector[Tag]): MMap[PosInteger, ReportItems] = {
     val reportItemMap: MMap[PosInteger, ReportItems] = {
       import scala.collection.JavaConverters._
       new java.util.TreeMap[PosInteger, ReportItems]().asScala
@@ -409,19 +415,19 @@ object LogikaCheckAction {
         val ris = reportItemMap.getOrElseUpdate(tag.lineBegin, ReportItems())
         tag match {
           case _: ErrorTag =>
-            ris.error += ConsoleReportItem(tag.lineBegin, tag.columnBegin, tag.offset, tag.length, tag.message)
+            ris.error += ConsoleReportItem(project, file, tag.lineBegin, tag.columnBegin, tag.offset, tag.length, tag.message)
           case _: WarningTag if tag.kind == "checksat" =>
             ris.checksat += CheckSatReportItem(tag.message)
           case _: WarningTag =>
-            ris.warning += ConsoleReportItem(tag.lineBegin, tag.columnBegin, tag.offset, tag.length, tag.message)
+            ris.warning += ConsoleReportItem(project, file, tag.lineBegin, tag.columnBegin, tag.offset, tag.length, tag.message)
           case _: InfoTag if tag.kind == "hint" =>
             ris.hint = Some(HintReportItem(tag.message))
           case _: InfoTag if tag.kind == "summoning" =>
             val firstLine = tag.message.substring(tag.message.indexOf(';') + 1,
               tag.message.indexOf('\n')).trim
-            ris.summoning += SummoningReportItem(firstLine, tag.offset, tag.message)
+            ris.summoning += SummoningReportItem(project, file, firstLine, tag.offset, tag.message)
           case _: InfoTag =>
-            ris.info += ConsoleReportItem(tag.lineBegin, tag.columnBegin, tag.offset, tag.length, tag.message)
+            ris.info += ConsoleReportItem(project, file, tag.lineBegin, tag.columnBegin, tag.offset, tag.length, tag.message)
         }
     }
 
@@ -607,7 +613,7 @@ object LogikaCheckAction {
           }
         }
 
-        for ((line, ris) <- processLocationTags(lTags)) {
+        for ((line, ris) <- processLocationTags(project, file, lTags)) {
           if (ris.error.nonEmpty) consoleReportItems(ris.error, line, errorIcon, errorAttr, errorColor)
           if (ris.warning.nonEmpty) consoleReportItems(ris.warning, line, warningIcon, warningAttr, warningColor)
           if (ris.info.nonEmpty) consoleReportItems(ris.info, line, infoIcon, infoAttr, infoColor)
@@ -694,12 +700,12 @@ object LogikaCheckAction {
                     if (!editor.isDisposed)
                       TransactionGuard.submitTransaction(project, (() =>
                         FileEditorManager.getInstance(project).openTextEditor(
-                          new OpenFileDescriptor(project, file, sri.offset), true)): Runnable)
+                          new OpenFileDescriptor(sri.project, sri.file, sri.offset), true)): Runnable)
                   case cri: ConsoleReportItem =>
                     if (!editor.isDisposed)
                       TransactionGuard.submitTransaction(project, (() =>
                         FileEditorManager.getInstance(project).openTextEditor(
-                          new OpenFileDescriptor(project, file, cri.offset), true)): Runnable)
+                          new OpenFileDescriptor(cri.project, cri.file, cri.offset), true)): Runnable)
                 }
             })
           }

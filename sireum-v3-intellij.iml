@@ -20,7 +20,7 @@
     <orderEntry type="module" module-name="runtime-macros" />
     <orderEntry type="module" module-name="runtime-library" />
     <orderEntry type="library" name="org.antlr:antlr4-runtime:4.7.1" level="project" />
-    <orderEntry type="library" name="org.scalameta:scalameta_2.12:2.1.5" level="project" />
     <orderEntry type="library" name="com.lihaoyi:upickle_2.12:0.5.1" level="project" />
+    <orderEntry type="library" name="org.scalameta:scalameta_2.12:2.1.7" level="project" />
   </component>
 </module>

@@ -173,6 +173,18 @@
             <add-to-group group-id="SireumLogikaSymbolGroup"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl SEMICOLON" second-keystroke="BACK_SLASH"/>
         </action>
+        <action id="LogikaInsertUnion" class="org.sireum.intellij.logika.action.LogikaInsertUnion"
+                text="Union"
+                description="Insert Union Symbol">
+            <add-to-group group-id="SireumLogikaSymbolGroup"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl SEMICOLON" second-keystroke="U"/>
+        </action>
+        <action id="LogikaInsertIntersection" class="org.sireum.intellij.logika.action.LogikaInsertIntersection"
+                text="Intersection"
+                description="Insert Intersection Symbol">
+            <add-to-group group-id="SireumLogikaSymbolGroup"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl SEMICOLON" second-keystroke="I"/>
+        </action>
     </actions>
 
     <application-components>

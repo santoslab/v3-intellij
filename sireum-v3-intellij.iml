@@ -10,6 +10,7 @@
       <sourceFolder url="file://$MODULE_DIR$/sireum-v3/util/jvm/src/main/scala" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/sireum-v3/logika/shared/src/main/scala" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/sireum-v3/slang/shared/src/main/scala" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sireum-v3/slang/shared/src/main/scala-extra" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
@@ -21,6 +22,6 @@
     <orderEntry type="module" module-name="runtime-library" />
     <orderEntry type="library" name="org.antlr:antlr4-runtime:4.7.1" level="project" />
     <orderEntry type="library" name="com.lihaoyi:upickle_2.12:0.5.1" level="project" />
-    <orderEntry type="library" name="org.scalameta:scalameta_2.12:3.2.0" level="project" />
+    <orderEntry type="library" name="org.scalameta:scalameta_2.12:3.3.1" level="project" />
   </component>
 </module>

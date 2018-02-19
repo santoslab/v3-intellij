@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2017, Robby, Kansas State University
+ Copyright (c) 2018, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -50,8 +50,7 @@ import org.sireum.intellij.logika.action.LogikaCheckAction._
 import org.sireum.lang.ast.TopUnit
 import org.sireum.lang.logika.TruthTableVerifier
 import org.sireum.lang.parser.SlangParser
-import org.sireum.lang.util.AccumulatingReporter
-import org.sireum.lang.util.Reporter.Message.Level
+import org.sireum.message._
 import org.sireum.util._
 
 object Slang {
@@ -161,7 +160,7 @@ object Slang {
 
   def check(editor: Editor, fileUri: FileResourceUri): Seq[Tag] = {
     val text = editor.getDocument.getText
-    val reporter = AccumulatingReporter(ISZ())
+    val reporter = Reporter.create
     val (noPrev, prevStatus) = Option(editor.getUserData(statusKey)) match {
       case Some(b) => (false, b)
       case _ => (true, false)
@@ -188,7 +187,7 @@ object Slang {
     }
     for (m <- reporter.internalErrors) {
       Util.notify(new Notification(
-        "Sireum Logika", "Logika Internal Error", m.message.value,
+        "Sireum Logika", "Logika Internal Error", m.text.value,
         NotificationType.ERROR), editor.getProject, shouldExpire = true)
     }
     editor.putUserData(statusKey, status)
@@ -201,16 +200,16 @@ object Slang {
           val li = LocationInfo(pos.beginLine.toMP.toInt, pos.beginColumn.toMP.toInt, pos.endLine.toMP.toInt,
             pos.endColumn.toMP.toInt, pos.offset.toMP.toInt, pos.length.toMP.toInt)
           m.level match {
-            case Level.Error => tags :+= li.toLocationError(fileUriOpt, m.kind.value, m.message.value)
-            case Level.Warning => tags :+= li.toLocationWarning(fileUriOpt, m.kind.value, m.message.value)
-            case Level.Info => tags :+= li.toLocationInfo(fileUriOpt, m.kind.value, m.message.value)
+            case Level.Error => tags :+= li.toLocationError(fileUriOpt, m.kind.value, m.text.value)
+            case Level.Warning => tags :+= li.toLocationWarning(fileUriOpt, m.kind.value, m.text.value)
+            case Level.Info => tags :+= li.toLocationInfo(fileUriOpt, m.kind.value, m.text.value)
             case _ =>
           }
         case _ =>
           m.level match {
-            case Level.Error => tags :+= ErrorMessage(m.kind.value, m.message.value)
-            case Level.Warning => tags :+= WarningMessage(m.kind.value, m.message.value)
-            case Level.Info => tags :+= InfoMessage(m.kind.value, m.message.value)
+            case Level.Error => tags :+= ErrorMessage(m.kind.value, m.text.value)
+            case Level.Warning => tags :+= WarningMessage(m.kind.value, m.text.value)
+            case Level.Info => tags :+= InfoMessage(m.kind.value, m.text.value)
             case _ =>
           }
       }

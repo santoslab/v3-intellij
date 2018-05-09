@@ -9,19 +9,19 @@
       <sourceFolder url="file://$MODULE_DIR$/sireum-v3/util/shared/src/main/scala" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/sireum-v3/util/jvm/src/main/scala" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/sireum-v3/logika/shared/src/main/scala" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/sireum-v3/slang/shared/src/main/scala" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/sireum-v3/slang/shared/src/main/scala-extra" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sireum-v3/slang/ast/shared/src/main/scala" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sireum-v3/slang/parser/shared/src/main/scala" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sireum-v3/slang/tipe/shared/src/main/scala" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="org.scala-lang.modules:scala-java8-compat_2.12:0.8.0" level="project" />
-    <orderEntry type="library" name="org.spire-math:spire_2.12:0.13.0" level="project" />
-    <orderEntry type="library" name="scala-sdk-2.12.4" level="project" />
-    <orderEntry type="library" name="org.scala-lang.platform:scalajson_2.12:1.0.0-M4" level="project" />
     <orderEntry type="module" module-name="runtime-macros" />
     <orderEntry type="module" module-name="runtime-library" />
     <orderEntry type="library" name="org.antlr:antlr4-runtime:4.7.1" level="project" />
     <orderEntry type="library" name="com.lihaoyi:upickle_2.12:0.5.1" level="project" />
-    <orderEntry type="library" name="org.scalameta:scalameta_2.12:3.3.1" level="project" />
+    <orderEntry type="library" name="org.scala-lang.modules:scala-java8-compat_2.12:0.9.0" level="project" />
+    <orderEntry type="library" name="org.scalameta:scalameta_2.12:3.7.4" level="project" />
+    <orderEntry type="library" name="com.zaxxer:nuprocess:1.1.3" level="project" />
+    <orderEntry type="library" name="scala-sdk-2.12.6" level="project" />
   </component>
 </module>

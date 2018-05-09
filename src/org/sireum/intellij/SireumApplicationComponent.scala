@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2017, Robby, Kansas State University
+ Copyright (c) 2018, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -161,6 +161,8 @@ object SireumApplicationComponent {
               w.write(lineSep)
               w.flush()
             }
+          } catch {
+            case _: InterruptedException =>
           } finally os.close()
         }, { is =>
           try {
@@ -171,6 +173,8 @@ object SireumApplicationComponent {
                 processOutput(line)
               }
             }
+          } catch {
+            case _: IOException =>
           } finally is.close()
         }, ("SIREUM_HOME", d.getAbsolutePath)))
       case _ => None

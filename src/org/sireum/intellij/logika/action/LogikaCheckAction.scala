@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2017, Robby, Kansas State University
+ Copyright (c) 2018, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -174,7 +174,8 @@ object LogikaCheckAction {
             }
             Thread.sleep(175)
           }
-          statusBar.removeWidget(statusBarWidget.ID())
+          ApplicationManager.getApplication.invokeLater(
+            () => statusBar.removeWidget(statusBarWidget.ID()))
         }
       }
       t.setDaemon(true)

@@ -5,13 +5,11 @@
     <content url="file://$MODULE_DIR$/../sireum-v3/runtime/library">
       <sourceFolder url="file://$MODULE_DIR$/../sireum-v3/runtime/library/shared/src/main/scala" isTestSource="false" />
     </content>
-    <orderEntry type="jdk" jdkName="1.8 JetBrains" jdkType="JavaSDK" />
+    <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="scala-sdk-2.12.4" level="project" />
-    <orderEntry type="library" name="org.scala-lang.modules:scala-java8-compat_2.12:0.8.0" level="project" />
-    <orderEntry type="library" name="org.scala-lang.platform:scalajson_2.12:1.0.0-M4" level="project" />
-    <orderEntry type="library" name="org.spire-math:spire_2.12:0.13.0" level="project" />
     <orderEntry type="module" module-name="runtime-macros" />
     <orderEntry type="library" name="com.lihaoyi:upickle_2.12:0.5.1" level="project" />
+    <orderEntry type="library" name="org.scala-lang.modules:scala-java8-compat_2.12:0.9.0" level="project" />
+    <orderEntry type="library" name="scala-sdk-2.12.6" level="project" />
   </component>
 </module>

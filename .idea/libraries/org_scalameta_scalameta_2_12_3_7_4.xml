@@ -23,26 +23,6 @@
       <root url="jar://$MAVEN_REPOSITORY$/org/scalameta/semanticdb_2.12/3.7.4/semanticdb_2.12-3.7.4.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES>
-      <root url="jar://$MAVEN_REPOSITORY$/org/scalameta/scalameta_2.12/3.7.4/scalameta_2.12-3.7.4-sources.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scalameta/common_2.12/3.7.4/common_2.12-3.7.4-sources.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/com/lihaoyi/sourcecode_2.12/0.1.3/sourcecode_2.12-0.1.3-sources.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scalameta/dialects_2.12/3.7.4/dialects_2.12-3.7.4-sources.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scalameta/parsers_2.12/3.7.4/parsers_2.12-3.7.4-sources.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scalameta/tokens_2.12/3.7.4/tokens_2.12-3.7.4-sources.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scalameta/quasiquotes_2.12/3.7.4/quasiquotes_2.12-3.7.4-sources.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scalameta/tokenizers_2.12/3.7.4/tokenizers_2.12-3.7.4-sources.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/com/lihaoyi/fastparse_2.12/1.0.0/fastparse_2.12-1.0.0-sources.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/com/lihaoyi/fastparse-utils_2.12/1.0.0/fastparse-utils_2.12-1.0.0-sources.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scalameta/transversers_2.12/3.7.4/transversers_2.12-3.7.4-sources.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scalameta/trees_2.12/3.7.4/trees_2.12-3.7.4-sources.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scalameta/inputs_2.12/3.7.4/inputs_2.12-3.7.4-sources.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scalameta/langmeta_2.12/3.7.4/langmeta_2.12-3.7.4-sources.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scalameta/semanticdb3_2.12/3.7.4/semanticdb3_2.12-3.7.4-sources.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/com/lihaoyi/pprint_2.12/0.5.3/pprint_2.12-0.5.3-sources.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/com/lihaoyi/fansi_2.12/0.2.5/fansi_2.12-0.2.5-sources.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scalameta/io_2.12/3.7.4/io_2.12-3.7.4-sources.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/org/scalameta/semanticdb_2.12/3.7.4/semanticdb_2.12-3.7.4-sources.jar!/" />
-    </SOURCES>
+    <SOURCES />
   </library>
 </component>

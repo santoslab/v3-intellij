@@ -26,7 +26,7 @@
 <idea-plugin>
     <id>org.sireum.intellij</id>
     <name>Sireum v3</name>
-    <version>3.2.1-SNAPSHOT</version>
+    <version>3.2.1</version>
     <vendor email="robby@santoslab.org" url="http://robby.santoslab.org">Robby, SAnToS Lab, Kansas State University
     </vendor>
 
@@ -43,7 +43,7 @@
     ]]>
     </change-notes>
 
-    <idea-version since-build="173.3727"/>
+    <idea-version since-build="182.3684"/>
 
     <depends>com.intellij.modules.lang</depends>
 

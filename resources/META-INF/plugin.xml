@@ -74,7 +74,6 @@
                 text="Run Logika Program"
                 description="Run Logika Program">
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
-            <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl R"/>
         </action>
 
         <action id="LogikaCheckAction" class="org.sireum.intellij.logika.action.LogikaCheckAction"

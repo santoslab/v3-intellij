@@ -27,9 +27,10 @@ package org.sireum.intellij.logika.action
 
 import java.awt.{Color, Font}
 import java.awt.event.MouseEvent
+import java.io.File
 import java.util.concurrent._
-import javax.swing.{DefaultListModel, Icon, JSplitPane}
 
+import javax.swing.{DefaultListModel, Icon, JSplitPane}
 import com.intellij.openapi.editor.colors.{EditorFontType, TextAttributesKey}
 import com.intellij.openapi.editor.event._
 import com.intellij.notification.{Notification, NotificationType}
@@ -716,6 +717,39 @@ object LogikaCheckAction {
         editor.putUserData(analysisDataKey, rhs)
       }
     })
+
+  def run(project: Project, file: VirtualFile, editor: Editor): Unit = {
+    val path = file.getCanonicalPath
+    ApplicationManager.getApplication.invokeLater(() =>
+      sireumToolWindowFactory(project, f => {
+        val tw = f.toolWindow.asInstanceOf[ToolWindowImpl]
+        val font = editor.getColorsScheme.getFont(EditorFontType.PLAIN)
+        f.logika.logikaTextArea.setFont(font)
+        tw.activate(() => {
+          saveSetDividerLocation(f.logika.logikaToolSplitPane, 0.0)
+          f.logika.logikaTextArea.setText(s"Running $path ...")
+          f.logika.logikaTextArea.setCaretPosition(0)
+        })
+      }))
+    new Thread(() => {
+      SireumApplicationComponent.runSireum(project, None, "logika", "-x", "--run", path) match {
+        case Some(s) =>
+          val text = if (s.trim == "") "No output!" else s
+          ApplicationManager.getApplication.invokeLater(() =>
+            sireumToolWindowFactory(project, f => {
+              val tw = f.toolWindow.asInstanceOf[ToolWindowImpl]
+              val font = editor.getColorsScheme.getFont(EditorFontType.PLAIN)
+              f.logika.logikaTextArea.setFont(font)
+              tw.activate(() => {
+                saveSetDividerLocation(f.logika.logikaToolSplitPane, 0.0)
+                f.logika.logikaTextArea.setText(text)
+                f.logika.logikaTextArea.setCaretPosition(0)
+              })
+            }))
+        case _ =>
+      }
+    }).start()
+  }
 }
 
 import LogikaCheckAction._
@@ -742,6 +776,29 @@ private class LogikaCheckAction extends LogikaOnlyAction {
     if (editor == null) return
     enableEditor(project, file, editor)
     analyze(project, file, editor, isBackground = false)
+    e.getPresentation.setEnabled(true)
+  }
+}
+
+private class LogikaRunAction extends LogikaOnlyAction {
+
+  // init
+  {
+    val am = ActionManager.getInstance
+
+    val runGroup = am.getAction("SireumLogikaGroup").
+      asInstanceOf[DefaultActionGroup]
+    runGroup.addAction(this, Constraints.FIRST)
+  }
+
+  override def actionPerformed(e: AnActionEvent): Unit = {
+    e.getPresentation.setEnabled(false)
+    val project = e.getProject
+    val editor = FileEditorManager.
+      getInstance(project).getSelectedTextEditor
+    val file = e.getData[VirtualFile](CommonDataKeys.VIRTUAL_FILE)
+    if (editor == null) return
+    run(project, file, editor)
     e.getPresentation.setEnabled(true)
   }
 }

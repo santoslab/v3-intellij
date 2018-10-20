@@ -14,7 +14,7 @@
       <parameter value="-unchecked" />
     </parameters>
     <plugins>
-      <plugin path="$USER_HOME$/.ivy2/local/org.sireum/scalac-plugin_2.12/3.3.1/jars/scalac-plugin_2.12.jar" />
+      <plugin path="$USER_HOME$/.coursier/cache/v1/https/repo1.maven.org/maven2/org/sireum/scalac-plugin_2.12/3.3.3/scalac-plugin_2.12-3.3.3.jar" />
     </plugins>
   </component>
 </project>

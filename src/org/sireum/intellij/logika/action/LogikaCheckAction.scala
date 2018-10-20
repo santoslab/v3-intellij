@@ -719,7 +719,6 @@ object LogikaCheckAction {
     })
 
   def run(project: Project, file: VirtualFile, editor: Editor): Unit = {
-    val path = file.getCanonicalPath
     ApplicationManager.getApplication.invokeLater(() =>
       sireumToolWindowFactory(project, f => {
         val tw = f.toolWindow.asInstanceOf[ToolWindowImpl]
@@ -727,12 +726,12 @@ object LogikaCheckAction {
         f.logika.logikaTextArea.setFont(font)
         tw.activate(() => {
           saveSetDividerLocation(f.logika.logikaToolSplitPane, 0.0)
-          f.logika.logikaTextArea.setText(s"Running $path ...")
+          f.logika.logikaTextArea.setText(s"Compiling and running ${file.getName} ...")
           f.logika.logikaTextArea.setCaretPosition(0)
         })
       }))
     new Thread(() => {
-      SireumApplicationComponent.runSireum(project, None, "logika", "-x", "--run", path) match {
+      SireumApplicationComponent.runSireum(project, None, "logika", "-x", "--run", file.getCanonicalPath) match {
         case Some(s) =>
           val text = if (s.trim == "") "No output!" else s
           ApplicationManager.getApplication.invokeLater(() =>

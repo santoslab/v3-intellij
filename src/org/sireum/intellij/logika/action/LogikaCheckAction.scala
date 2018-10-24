@@ -55,6 +55,7 @@ import org.sireum.intellij.logika.{LogikaConfigurable, LogikaFileType}
 import org.sireum.intellij.logika.lexer.Lexer
 import org.sireum.logika.message._
 import org.sireum.util._
+import org.sireum.util.jvm.{Exec, FileUtil, OsArch, OsUtil}
 
 object LogikaCheckAction {
 
@@ -719,35 +720,51 @@ object LogikaCheckAction {
     })
 
   def run(project: Project, file: VirtualFile, editor: Editor): Unit = {
-    ApplicationManager.getApplication.invokeLater(() =>
-      sireumToolWindowFactory(project, f => {
-        val tw = f.toolWindow.asInstanceOf[ToolWindowImpl]
-        val font = editor.getColorsScheme.getFont(EditorFontType.PLAIN)
-        f.logika.logikaTextArea.setFont(font)
-        tw.activate(() => {
-          saveSetDividerLocation(f.logika.logikaToolSplitPane, 0.0)
-          f.logika.logikaTextArea.setText(s"Compiling and running ${file.getName} ...")
-          f.logika.logikaTextArea.setCaretPosition(0)
-        })
-      }))
-    new Thread(() => {
-      SireumApplicationComponent.runSireum(project, None, "logika", "-x", "--run", file.getCanonicalPath) match {
-        case Some(s) =>
-          val text = if (s.trim == "") "No output!" else s
-          ApplicationManager.getApplication.invokeLater(() =>
-            sireumToolWindowFactory(project, f => {
-              val tw = f.toolWindow.asInstanceOf[ToolWindowImpl]
-              val font = editor.getColorsScheme.getFont(EditorFontType.PLAIN)
-              f.logika.logikaTextArea.setFont(font)
-              tw.activate(() => {
-                saveSetDividerLocation(f.logika.logikaToolSplitPane, 0.0)
-                f.logika.logikaTextArea.setText(text)
-                f.logika.logikaTextArea.setCaretPosition(0)
-              })
-            }))
-        case _ =>
-      }
-    }).start()
+    SireumApplicationComponent.getSireumHome(project) match {
+      case Some(d) =>
+        new Thread(() => {
+          val javaPath = new File(d, "platform/java/bin/java").getAbsolutePath
+          val sireumJarPath = new File(d, "bin/sireum.jar").getAbsolutePath
+          val args = Seq("-Dfile.encoding=UTF-8", "-jar", sireumJarPath, "logika", "-x", "--run", file.getCanonicalPath)
+          val cmdOpt: Option[Seq[String]] = OsUtil.detect match {
+            case OsArch.Win =>
+              val script = java.nio.file.Files.createTempFile("run", ".bat").toFile
+              val command = (Seq(javaPath) ++ args).mkString(" ")
+              FileUtil.writeFile(script,
+                s"""@echo off
+                   |set SIREUM_HOME=${d.getAbsolutePath}
+                   |echo *** Compiling and running ${file.getName} ...
+                   |$command
+                   |echo *** End executing ${file.getName}; press any key to exit ...
+                   |pause >nul
+                   |exit""".stripMargin)
+              script.deleteOnExit()
+              Some(Seq("cmd", "/c", "start", "/wait", script.getAbsolutePath))
+            case OsArch.Mac | OsArch.Linux =>
+              val script = java.nio.file.Files.createTempFile("run", ".sh").toFile
+              val command = (Seq(javaPath) ++ args).mkString(" ")
+              FileUtil.writeFile(script,
+                s"""#!/bin/bash
+                   |export SIREUM_HOME=${d.getAbsolutePath}
+                   |echo "*** Compiling and running ${file.getName} ..."
+                   |$command
+                   |read -rsp $$'*** End executing ${file.getName}; press any key to exit ...\n' -n1 key
+                   |""".stripMargin)
+              script.setExecutable(true)
+              script.deleteOnExit()
+              Some(if (OsUtil.detect == OsArch.Mac) Seq("open", "-a", "Terminal", script.getAbsolutePath)
+              else Seq("x-terminal-emulator", "-e", script.getAbsolutePath))
+            case _ => None
+          }
+          cmdOpt match {
+            case Some(cmd) => Runtime.getRuntime.exec(cmd.mkString(" ")).waitFor()
+            case _ => notifyHelper(Some(project), Some(editor), isBackground = false, ivector(
+              InfoMessage("Logika", s"Cannot run ${file.getName} due to unsupported platform")
+            ))
+          }
+        }).start()
+      case _ =>
+    }
   }
 }
 

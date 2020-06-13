@@ -28,7 +28,7 @@ package org.sireum.intellij
 import java.io._
 import java.util.concurrent.BlockingQueue
 
-import com.intellij.ide.plugins.PluginManager
+import com.intellij.ide.plugins.{PluginManager, PluginManagerCore}
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.notification.{Notification, NotificationType}
 import com.intellij.openapi.components._
@@ -51,7 +51,7 @@ object SireumApplicationComponent {
   private val dev: String = if (isDev) "-dev" else ""
 
   private lazy val currentPluginVersion =
-    PluginManager.getPlugin(
+    PluginManagerCore.getPlugin(
       PluginId.getId("org.sireum.intellij")).getVersion
   private[intellij] var sireumHomeOpt: Option[File] = None
   private[intellij] var vmArgs: ISeq[String] = ivector("-Xss2m")
@@ -205,7 +205,7 @@ object SireumApplicationComponent {
     if (path == null) return None
     runSireum(path, vmArgs, envVars, None, Seq()) match {
       case Some(s) =>
-        if (s.lines.exists(
+        if (s.linesIterator.exists(
           _.trim == "Sireum: A Software Analysis Platform (v3)")) {
           Some(new File(path))
         } else None

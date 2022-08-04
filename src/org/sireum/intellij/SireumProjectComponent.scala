@@ -37,7 +37,7 @@ class SireumProjectComponent(project: Project) extends ProjectComponent {
     SireumToolWindowFactory.removeToolWindow(project)
   }
 
-  override def projectOpened(): Unit = {
+  override def projectOpened(): Unit = ToolWindowManager.getInstance(project).invokeLater(() => {
     val tw = ToolWindowManager.getInstance(project).
       registerToolWindow("Sireum", false, ToolWindowAnchor.RIGHT)
     SireumToolWindowFactory.createToolWindowContent(project, tw)
@@ -59,7 +59,7 @@ class SireumProjectComponent(project: Project) extends ProjectComponent {
           override def
           selectionChanged(event: FileEditorManagerEvent): Unit = {}
         })
-  }
+  })
 
   override def initComponent(): Unit = {}
 

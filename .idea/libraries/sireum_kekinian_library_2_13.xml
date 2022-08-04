@@ -1,5 +1,5 @@
 <component name="libraryTable">
-  <library name="sireum.kekinian.library_2.131" type="repository">
+  <library name="sireum.kekinian.library_2.13" type="repository">
     <properties maven-id="org.sireum.kekinian:library_2.13:4.20220802.b3e076e" />
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/lib/library_2.13-4.20220802.b3e076e.jar!/" />

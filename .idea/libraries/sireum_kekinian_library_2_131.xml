@@ -1,5 +1,5 @@
 <component name="libraryTable">
-  <library name="sireum.kekinian.library_2.13" type="repository">
+  <library name="sireum.kekinian.library_2.131" type="repository">
     <properties maven-id="org.sireum.kekinian:library_2.13:4.20220802.b3e076e" />
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/lib/library_2.13-4.20220802.b3e076e.jar!/" />
@@ -26,6 +26,7 @@
       <root url="jar://$PROJECT_DIR$/lib/scalactic_2.13-3.2.13.jar!/" />
       <root url="jar://$PROJECT_DIR$/lib/nuprocess-2.0.3.jar!/" />
       <root url="jar://$PROJECT_DIR$/lib/os-lib_2.13-0.8.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/scala-library-2.13.4.jar!/" />
       <root url="jar://$PROJECT_DIR$/lib/github-api-1.307.jar!/" />
       <root url="jar://$PROJECT_DIR$/lib/coursier_2.13-2.0.16.jar!/" />
       <root url="jar://$PROJECT_DIR$/lib/asm-9.3.jar!/" />

@@ -11,7 +11,7 @@
   <component name="FrameworkDetectionExcludesConfiguration" detection-enabled="false">
     <type id="Python" />
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" project-jdk-name="Sireum-dev" project-jdk-type="IDEA JDK">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" project-jdk-name="Sireum-dev (with Scala Plugin)" project-jdk-type="IDEA JDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
 </project>

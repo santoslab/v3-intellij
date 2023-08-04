@@ -87,7 +87,7 @@ object LogikaConfigurable {
     checkSat = pc.getBoolean(checkSatKey, checkSat)
     fileExts = Option(pc.getValue(fileExtsKey)).flatMap(parseFileExts).getOrElse(fileExts)
     hint = pc.getBoolean(hintKey, hint)
-    hint = pc.getBoolean(hintUnicodeKey, hintUnicode)
+    hintUnicode = pc.getBoolean(hintUnicodeKey, hintUnicode)
     inscribeSummonings = pc.getBoolean(inscribeSummoningsKey, inscribeSummonings)
     coneInfluence = pc.getBoolean(coneInfluenceKey, coneInfluence)
     checkerKind = pc.getValue(checkerKindKey, checkerKind)
